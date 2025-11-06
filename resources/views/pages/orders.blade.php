@@ -1,18 +1,6 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+@extends('layouts.main')
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-    <title>Hello, world!</title>
-  </head>
-  <body>
-    {{-- Navbar --}}    
+@section('content')  
     <x-navbar/>
 
     {{-- Search Start--}}
@@ -36,7 +24,7 @@
           <li class="nav-item" role="all-products">
               <button class="nav-link active" id="pills-all-tab" data-bs-toggle="pill" data-bs-target="#pills-all" type="button" role="tab" aria-controls="pills-all" aria-selected="true">All Products</button>
           </li>
-          <li class="nav-item" role="presentation">
+          <li class="nav-item " role="presentation">
               <button class="nav-link" id="pills-home-tab" data-bs-toggle="pill" data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home" aria-selected="false">Makanan</button>
           </li>
           <li class="nav-item" role="presentation">
@@ -134,55 +122,4 @@
     {{-- Tab Orders End --}}
    
     </div>
-
-
-    {{-- script JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-    {{-- <script>
-      // Modal Product Logic
-      var productModal = document.getElementById('productModal')
-      productModal.addEventListener('show.bs.modal', function (event) {
-        var button = event.relatedTarget
-        var id = button.getAttribute('data-id') 
-        var nama = button.getAttribute('data-nama')
-        var harga = button.getAttribute('data-harga')
-        var deskripsi = button.getAttribute('data-deskripsi')
-        var gambar = button.getAttribute('data-gambar')
-
-        var modalTitle = productModal.querySelector('.modal-title')
-        var modalImage = productModal.querySelector('#modalImage')
-        var modalDeskripsi = productModal.querySelector('#modalDeskripsi')
-        var modalHarga = productModal.querySelector('#modalHarga')
-
-        modalTitle.textContent = nama
-        modalImage.src = gambar
-        modalDeskripsi.textContent = deskripsi
-        modalHarga.textContent = 'Rp ' + harga
-        modalId.value = id
-
-        productModal.querySelector('input[name="id"]').value = id
-        productModal.querySelector('input[name="nama"]').value = nama
-        productModal.querySelector('input[name="harga"]').value = harga
-        productModal.querySelector('input[name="gambar"]').value = gambar
-      })
-
-
-      // Quantity Selector Logic
-        const decreaseBtn = document.getElementById('decreaseQty');
-        const increaseBtn = document.getElementById('increaseQty');
-        const qtyInput = document.getElementById('quantityInput');
-
-        decreaseBtn.addEventListener('click', () => {
-          let value = parseInt(qtyInput.value);
-          if (value > 1) qtyInput.value = value - 1;
-        });
-
-        increaseBtn.addEventListener('click', () => {
-          let value = parseInt(qtyInput.value);
-          qtyInput.value = value + 1;
-        });
-    </script> --}}
-
-  </body>
-
-</html>
+@endsection

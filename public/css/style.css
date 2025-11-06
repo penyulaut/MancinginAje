@@ -43,7 +43,7 @@ footer{
 }
 
 .custom-tabs .nav-link.active {
-    background-color: var(--primary); /* primary color */
+    background-color: #ffc107;
     color: #fff;
     box-shadow: 0 4px 6px rgba(0,0,0,0.2);
 }

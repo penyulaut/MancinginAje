@@ -1,11 +1,7 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Tambah Produk</title>
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-</head>
-<body class="search-bar">
+@extends('layouts.main')
+
+@section('content')
+
     <h2>Tambah Produk</h2>
 
     <!-- Tampilkan pesan sukses -->
@@ -26,5 +22,4 @@
 
         <button type="submit">Simpan</button>
     </form>
-</body>
-</html>
+@endsection

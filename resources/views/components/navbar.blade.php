@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm p-3" style="background-color: #2c2c2c;">
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm p-3">
   <div class="container">
 
     <!-- Brand -->
