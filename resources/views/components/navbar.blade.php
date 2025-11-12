@@ -19,17 +19,40 @@
         <li class="nav-item"><a class="nav-link px-3" href="/beranda#about">About</a></li>
         <li class="nav-item"><a class="nav-link px-3" href="/beranda#menu">Menu</a></li>
         <li class="nav-item"><a class="nav-link px-3" href="/beranda#contact">Contact</a></li>
-        <li class="nav-item"><a class="nav-link px-3" href="/beranda/orders">Orders</a></li>
+        <li class="nav-item"><a class="nav-link px-3" href="/beranda/orders">Menu</a></li>
 
         <!-- Divider kecil -->
         <li><span class="text-secondary mx-2">|</span></li>
 
         <!-- Tombol Login -->
         <li class="nav-item">
-          <a href="/login" class="btn btn-outline-warning rounded-pill px-3 py-1 fw-semibold">
-            <i class="fa-solid fa-right-to-bracket me-1"></i> Login
-          </a>
+
+            {{-- Jika BELUM login --}}
+            @guest
+                <a href="/login" class="btn btn-outline-warning rounded-pill px-3 py-1 fw-semibold">
+                    <i class="fa-solid fa-right-to-bracket me-1"></i> Login
+                </a>
+            @endguest
+
+            {{-- Jika SUDAH login --}}
+            @auth
+            <div class="btn-group">
+              <button type="button" class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa-regular fa-user me-1"></i>{{ Auth::user()->name }}
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                <form action="{{ route('logout') }}" method="POST">
+                  @csrf
+                  <button type="submit" class="dropdown-item">
+                      <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+                  </button>   
+                  <li><a class="dropdown-item" href="/beranda/yourorders"><i class="fa-solid fa-bowl-food me-2"></i>Lihat Pesanan</a></li>             
+                </form>                
+              </ul>
+            </div>           
+            @endauth
         </li>
+
 
         <!-- Icon Cart -->
         <li class="nav-item position-relative ms-3">

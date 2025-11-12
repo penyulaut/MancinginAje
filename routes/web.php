@@ -19,7 +19,6 @@ Route::post('/beranda/dashboard', [App\Http\Controllers\ProductController::class
 Route::get('/beranda/dashboard/create{id}/edit', [App\Http\Controllers\ProductController::class, 'edit'])->name('dashboard.edit');
 Route::put('/beranda/dashboard/{id}', [App\Http\Controllers\ProductController::class, 'update'])->name('dashboard.update');
 
-
 Route::get('/beranda/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
 Route::post('/beranda/cart/add', [App\Http\Controllers\CartController::class, 'store'])->name('cart.store');
 
@@ -30,3 +29,30 @@ Route::post('/beranda/cart/add', [App\Http\Controllers\CartController::class, 's
 // Halaman keranjang
 Route::get('/beranda/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
 Route::delete('/beranda/cart/{id}', [App\Http\Controllers\CartController::class, 'destroy'])->name('cart.destroy');
+
+
+
+// Route untuk autentikasi
+Route::get('/login', function () {
+    return view('auth.login');
+});
+
+Route::get('/register', [App\Http\Controllers\AuthController::class, 'showRegisterForm'])->name('register.show');
+Route::post('/register/submit', [App\Http\Controllers\AuthController::class, 'submitRegister'])->name('register.submit');
+
+Route::get('/login', [App\Http\Controllers\AuthController::class, 'showLoginForm'])->name('login.show');
+Route::post('/beranda', [App\Http\Controllers\AuthController::class, 'submitLogin'])->name('login.submit');
+
+Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
+
+
+
+// Menampilkan halaman checkout
+Route::get('/beranda/checkout', [App\Http\Controllers\OrderController::class, 'index'])->name('pages.checkout');
+
+// Menyimpan pesanan (setelah klik "Bayar")
+Route::post('/beranda/checkout', [App\Http\Controllers\OrderController::class, 'chekout'])->name('orders.store');
+
+
+// Pesanan Anda
+Route::get('/beranda/yourorders', [App\Http\Controllers\OrderController::class, 'showorders'])->name('pages.yourorders')->middleware('auth');

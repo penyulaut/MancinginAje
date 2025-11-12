@@ -2,7 +2,7 @@
 
 @section('content')
     <x-navbar/>
-    <div class="container mt-4">
+    <div class="container mt-4" style="height: 100vh">
         <div class="search-bar row">
             <div class="col-md-5">
                 <img src="{{ asset($product->gambar) }}" class="img-fluid rounded">

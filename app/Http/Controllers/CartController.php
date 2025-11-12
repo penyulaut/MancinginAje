@@ -13,7 +13,14 @@ class CartController extends Controller
     public function index()
     {
         $cart = session()->get('cart', []);
-        return view('pages.cart', compact('cart'));
+        $total = 0;
+        foreach ($cart as $item) {
+            $total += $item['harga'] * $item['quantity'];
+        }    
+
+
+
+        return view('pages.cart', compact('cart', 'total'));
     }
 
     /**
@@ -35,7 +42,7 @@ class CartController extends Controller
             return redirect()->back()->with('error', 'Produk tidak ditemukan.');
         }
 
-        $cart = session()->get('cart', []);
+        $cart = session()->get('cart', []);            
 
         if (isset($cart[$products->id])) {
             $cart[$products->id]['quantity'] += $request->quantity;
@@ -48,10 +55,10 @@ class CartController extends Controller
             ];
         }
 
-        session()->put('cart', $cart);
+        session()->put('cart', $cart);        
 
         // setelah tambah, arahkan ke halaman cart
-        return redirect()->route('cart.index')->with('success', 'Produk berhasil ditambahkan ke keranjang!');
+        return redirect()->route('cart.index')->with('success', 'Produk berhasil ditambahkan ke keranjang!');        
     }
 
     /**

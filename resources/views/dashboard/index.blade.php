@@ -2,10 +2,11 @@
 
 @section('content')
   <x-navbar/>
+  <x-sidebar></x-sidebar>
 
   <!-- Main Content -->
-  <div class="search-bar container">
-    <nav class="navbar mb-4 px-3">
+  <div class="search-bar px-5" style="margin-left: 200px">
+    <nav class="navbar p-2 m-2">
       <span class="navbar-brand fw-bold text-light">Dashboard Admin</span>
       <a href="/beranda/dashboard/create" class="btn btn-warning">Tambah data</a>
     </nav>

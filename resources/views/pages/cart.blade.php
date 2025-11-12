@@ -38,15 +38,19 @@
                                     <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
                                 </form>
                             </td>
-                        </tr>
+                        </tr>                        
                     @endforeach
                 </tbody>
-            </table>
+            </table>        
+            <h4 class="mt-3">Total Belanja: Rp {{ number_format($total, 0, ',', '.') }}</h4>
 
-            <a href="#" class="btn btn-success">Lanjutkan Pembayaran</a>
-            <a href="/beranda/orders" class="btn btn-primary">Pesan Lagi</a>
+            <form action="{{ route('orders.store' ) }}" method="POST">
+                @csrf
+                <button type="submit" class="btn btn-warning">Checkout</button>
+                <a href="/beranda/orders" class="btn btn-primary">Pesan Lagi</a>
+            </form>
         @else
-            {{-- <p>Keranjang masih kosong.</p> --}}
+            <p>Keranjang masih kosong.</p>
         @endif
     </div>
 @endsection

@@ -1,11 +1,13 @@
 @extends('layouts.main')
 
 @section('content')
-  {{-- Navbar --}}
-  <x-navbar/>
-
-  {{-- Home --}}
+  
   <section class="hero text-light text-center py-5">      
+    @if(session('success'))
+      <div class="alert alert-dark text-center mt-5">
+        {{ session('success') }}
+      </div>
+    @endif    
     <div class="container d-flex flex-column justify-content-center align-items-center h-100">
       <h1 class="display-3 fw-bold mb-3">Welcome to <span class="text-warning">Kenangan Senja</span></h1>
       <p class="lead mb-4">Rasakan kehangatan setiap cangkir dan suasana yang penuh cerita</p>
