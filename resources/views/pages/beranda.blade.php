@@ -9,7 +9,7 @@
       </div>
     @endif    
     <div class="container d-flex flex-column justify-content-center align-items-center h-100">
-      <h1 class="display-3 fw-bold mb-3">Welcome to <span class="text-warning">Kenangan Senja</span></h1>
+      <h1 class="display-3 fw-bold mb-3">Welcome to <span class="text-warning">MancinginAje</span></h1>
       <p class="lead mb-4">Rasakan kehangatan setiap cangkir dan suasana yang penuh cerita</p>
       <a href="#menu" class="btn btn-warning btn-lg px-4 rounded-pill shadow">Lihat Menu</a>
     </div>

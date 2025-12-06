@@ -3,7 +3,7 @@
 
     <!-- Brand -->
     <a class="navbar-brand fw-bold fs-4" href="/beranda#">
-      Kenangan <span class="text-warning">Senja</span>
+      Mancingin <span class="text-warning">Aje</span>
     </a>
 
     <!-- Toggler (Mobile) -->
@@ -15,11 +15,11 @@
     <!-- Menu -->
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <ul class="navbar-nav ms-auto align-items-center">
-        <li class="nav-item"><a class="nav-link px-3 active" href="/beranda#">Home</a></li>
-        <li class="nav-item"><a class="nav-link px-3" href="/beranda#about">About</a></li>
-        <li class="nav-item"><a class="nav-link px-3" href="/beranda#menu">Menu</a></li>
-        <li class="nav-item"><a class="nav-link px-3" href="/beranda#contact">Contact</a></li>
-        <li class="nav-item"><a class="nav-link px-3" href="/beranda/orders">Menu</a></li>
+        <li class="nav-item"><a class="nav-link px-3 active" href="/">Home</a></li>
+        <li class="nav-item"><a class="nav-link px-3" href="#about">About</a></li>
+        <li class="nav-item"><a class="nav-link px-3" href="#menu">Disarankan</a></li>
+        <li class="nav-item"><a class="nav-link px-3" href="#contact">Contact</a></li>
+        <li class="nav-item"><a class="nav-link px-3" href="/beranda/orders">Produk</a></li>
 
         <!-- Divider kecil -->
         <li><span class="text-secondary mx-2">|</span></li>

@@ -8,7 +8,7 @@ Route::get('/', function () {
 });
 
 
-Route::get('beranda', [App\Http\Controllers\BerandaController::class, 'index'])->name('pages.beranda');
+Route::get('/', [App\Http\Controllers\BerandaController::class, 'index'])->name('pages.beranda');
 
 Route::get('/beranda/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard.index');
 Route::get('/beranda/orders', [App\Http\Controllers\ProductController::class, 'index'])->name('pages.orders');
