@@ -4,7 +4,10 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\Orders;
+use App\Models\Order_items;
+use App\Models\Products;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class CancelPendingOrders extends Command
 {
@@ -37,10 +40,22 @@ class CancelPendingOrders extends Command
         $count = 0;
 
         foreach ($orders as $order) {
-            // Mark as cancelled
-            $order->status = 'cancelled';
-            $order->save();
-            $count++;
+            DB::transaction(function() use ($order, &$count) {
+                // Restore stock for each item
+                $items = $order->items()->get();
+                foreach ($items as $item) {
+                    $product = $item->product;
+                    if ($product) {
+                        // increase stok by item quantity
+                        $product->increment('stok', $item->quantity);
+                    }
+                }
+
+                // Mark order as cancelled
+                $order->status = 'cancelled';
+                $order->save();
+                $count++;
+            });
         }
 
         $this->info("Cancelled {$count} pending order(s) older than {$minutes} minutes.");
