@@ -3,14 +3,28 @@
 @section('content')  
     <x-navbar/>
 
-    <div class="container" style="margin-top: 100px; min-height: 70vh;">
+    <div class="container products-section" style="margin-top: 100px; min-height: 70vh;">
         <div class="row mb-5">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
                         <h2 class="fw-bold mb-2">Katalog Produk</h2>
-                        <p class="text-muted mb-0">Temukan peralatan pancing terbaik untuk petualangan Anda</p>
+                        @if(request('search'))
+                            <p class="text-muted mb-0">
+                                Menampilkan <strong>{{ $products->total() }}</strong> hasil untuk "<strong>{{ request('search') }}</strong>"
+                                @if($products->total() == 0)
+                                    <span class="text-danger"> - Tidak ada produk ditemukan</span>
+                                @endif
+                            </p>
+                        @else
+                            <p class="text-muted mb-0">Temukan peralatan pancing terbaik untuk petualangan Anda</p>
+                        @endif
                     </div>
+                    @if(request('search'))
+                        <a href="{{ route('pages.orders') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Tampilkan Semua
+                        </a>
+                    @endif
                 </div>
 
                 {{-- Search Bar Modern --}}
@@ -146,14 +160,153 @@
             </div>
             @endforeach
         </div>               
+
+        {{-- Pagination Modern --}}
+        @if($products->hasPages())
+        <div class="modern-pagination-container mt-5 mb-4">
+            <div class="pagination-info text-center mb-3">
+                <span class="text-muted">
+                    Menampilkan {{ $products->firstItem() }}-{{ $products->lastItem() }} dari {{ $products->total() }} produk
+                </span>
+            </div>
+
+            <nav aria-label="Product pagination">
+                <ul class="pagination justify-content-center modern-pagination">
+                    {{-- Previous Page Link --}}
+                    @if ($products->onFirstPage())
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-chevron-left"></i>
+                                <span class="d-none d-sm-inline ms-1">Sebelumnya</span>
+                            </span>
+                        </li>
+                    @else
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $products->previousPageUrl() }}" rel="prev">
+                                <i class="fas fa-chevron-left"></i>
+                                <span class="d-none d-sm-inline ms-1">Sebelumnya</span>
+                            </a>
+                        </li>
+                    @endif
+
+                    {{-- Pagination Elements --}}
+                    @php
+                        $start = max(1, $products->currentPage() - 2);
+                        $end = min($products->lastPage(), $products->currentPage() + 2);
+                    @endphp
+
+                    {{-- First page if not in range --}}
+                    @if($start > 1)
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $products->url(1) }}">1</a>
+                        </li>
+                        @if($start > 2)
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        @endif
+                    @endif
+
+                    {{-- Page range --}}
+                    @for ($page = $start; $page <= $end; $page++)
+                        @if ($page == $products->currentPage())
+                            <li class="page-item active">
+                                <span class="page-link">{{ $page }}</span>
+                            </li>
+                        @else
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $products->url($page) }}">{{ $page }}</a>
+                            </li>
+                        @endif
+                    @endfor
+
+                    {{-- Last page if not in range --}}
+                    @if($end < $products->lastPage())
+                        @if($end < $products->lastPage() - 1)
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        @endif
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $products->url($products->lastPage()) }}">{{ $products->lastPage() }}</a>
+                        </li>
+                    @endif
+
+                    {{-- Next Page Link --}}
+                    @if ($products->hasMorePages())
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $products->nextPageUrl() }}" rel="next">
+                                <span class="d-none d-sm-inline me-1">Selanjutnya</span>
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    @else
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <span class="d-none d-sm-inline me-1">Selanjutnya</span>
+                                <i class="fas fa-chevron-right"></i>
+                            </span>
+                        </li>
+                    @endif
+                </ul>
+            </nav>
+
+            {{-- Jump to Page (Optional) --}}
+            @if($products->lastPage() > 5)
+            <div class="jump-to-page text-center mt-3">
+                <form class="d-inline-flex align-items-center" method="GET" action="{{ route('pages.orders') }}">
+                    @foreach(request()->query() as $key => $value)
+                        @if($key !== 'page')
+                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                        @endif
+                    @endforeach
+                    <label class="me-2 text-muted small">Loncat ke halaman:</label>
+                    <input type="number" name="page" min="1" max="{{ $products->lastPage() }}"
+                           value="{{ $products->currentPage() }}" class="form-control form-control-sm me-2"
+                           style="width: 70px;">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Go</button>
+                </form>
+            </div>
+            @endif
+        </div>
+        @endif
     </div>
 @endsection
-    {{-- Tab Orders End --}}
-    
-    {{-- Pagination --}}
-    <div class="d-flex justify-content-center mt-4">
-        {{ $products->links() }}
-    </div>
-   
-    </div>
-@endsection
+
+{{-- Pagination Smooth Scroll Script --}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Smooth scroll to top when pagination links are clicked
+    document.querySelectorAll('.modern-pagination .page-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            // Only scroll if it's not the current page
+            if (!this.parentElement.classList.contains('active') && !this.parentElement.classList.contains('disabled')) {
+                // Scroll to the top of the products section
+                const productsSection = document.querySelector('.products-section');
+                if (productsSection) {
+                    productsSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+        });
+    });
+
+    // Handle jump to page form
+    const jumpForm = document.querySelector('.jump-to-page form');
+    if (jumpForm) {
+        jumpForm.addEventListener('submit', function(e) {
+            const pageInput = this.querySelector('input[name="page"]');
+            const page = parseInt(pageInput.value);
+            const maxPage = parseInt(pageInput.getAttribute('max'));
+
+            if (page < 1 || page > maxPage) {
+                e.preventDefault();
+                alert(`Halaman harus antara 1 dan ${maxPage}`);
+                return false;
+            }
+        });
+    }
+});
+</script>

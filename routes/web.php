@@ -15,6 +15,7 @@ Route::put('/beranda/dashboard/{id}', [App\Http\Controllers\ProductController::c
 
 // Products & Categories
 Route::get('/beranda/orders', [App\Http\Controllers\ProductController::class, 'index'])->name('pages.orders');
+Route::get('/api/search-suggestions', [App\Http\Controllers\ProductController::class, 'searchSuggestions'])->name('api.search.suggestions');
 Route::get('/beranda/detail/{id}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
 
 // Cart Routes
@@ -30,6 +31,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/beranda/payment/success', [App\Http\Controllers\PaymentController::class, 'finish'])->name('payment.finish');
     Route::post('/beranda/payment/notification', [App\Http\Controllers\PaymentController::class, 'notification'])->name('payment.notification');
     Route::get('/beranda/yourorders', [App\Http\Controllers\OrderController::class, 'showorders'])->name('pages.yourorders');
+    
+    // Profile routes
+    Route::get('/beranda/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
+    Route::post('/beranda/profile/update', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/beranda/profile/address', [App\Http\Controllers\ProfileController::class, 'updateAddress'])->name('profile.address.update');
+    Route::get('/beranda/profile/history', [App\Http\Controllers\ProfileController::class, 'history'])->name('profile.history');
 });
 
 // Authentication Routes

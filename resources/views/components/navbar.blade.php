@@ -65,6 +65,9 @@
                 <i class="fa-regular fa-user me-1"></i>{{ session('user_name') }}
               </button>
               <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2">
+                <li><a class="dropdown-item" href="{{ route('profile.show') }}">
+                  <i class="fas fa-user-circle me-2 text-primary"></i>Profil Saya
+                </a></li>
                 <li><a class="dropdown-item" href="/beranda/yourorders">
                   <i class="fas fa-box me-2 text-primary"></i>Pesanan Saya
                 </a></li>
@@ -100,3 +103,169 @@
     </div>
   </div>
 </nav>
+
+{{-- Search Autocomplete Script --}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInputs = document.querySelectorAll('input[name="search"]');
+    let currentFocus = -1;
+    let suggestionsContainer = null;
+
+    searchInputs.forEach(input => {
+        input.addEventListener('input', debounce(function(e) {
+            const query = e.target.value.trim();
+            if (query.length < 2) {
+                hideSuggestions();
+                return;
+            }
+
+            fetch(`/api/search-suggestions?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    showSuggestions(data, e.target);
+                })
+                .catch(error => {
+                    console.error('Search suggestions error:', error);
+                    hideSuggestions();
+                });
+        }, 300));
+
+        input.addEventListener('keydown', function(e) {
+            if (!suggestionsContainer) return;
+
+            const items = suggestionsContainer.querySelectorAll('.suggestion-item');
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentFocus = currentFocus < items.length - 1 ? currentFocus + 1 : 0;
+                highlightSuggestion(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentFocus = currentFocus > 0 ? currentFocus - 1 : items.length - 1;
+                highlightSuggestion(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (currentFocus >= 0 && items[currentFocus]) {
+                    items[currentFocus].click();
+                } else {
+                    input.closest('form').submit();
+                }
+            } else if (e.key === 'Escape') {
+                hideSuggestions();
+            }
+        });
+
+        input.addEventListener('blur', function() {
+            // Delay hiding to allow click on suggestions
+            setTimeout(hideSuggestions, 150);
+        });
+    });
+
+    function showSuggestions(suggestions, inputElement) {
+        hideSuggestions();
+
+        if (suggestions.length === 0) return;
+
+        suggestionsContainer = document.createElement('div');
+        suggestionsContainer.className = 'search-suggestions shadow-lg';
+        suggestionsContainer.style.cssText = `
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 0 0 12px 12px;
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+        `;
+
+        suggestions.forEach((suggestion, index) => {
+            const item = document.createElement('div');
+            item.className = 'suggestion-item px-3 py-2 d-flex align-items-center';
+            item.style.cssText = `
+                cursor: pointer;
+                border-bottom: 1px solid #f0f0f0;
+                transition: background-color 0.2s;
+            `;
+            item.innerHTML = `
+                <i class="fas ${getIconForType(suggestion.type)} me-2 text-primary"></i>
+                <span class="flex-grow-1">${highlightMatch(suggestion.text, inputElement.value)}</span>
+                <small class="text-muted">${getTypeLabel(suggestion.type)}</small>
+            `;
+
+            item.addEventListener('click', function() {
+                window.location.href = suggestion.url;
+            });
+
+            item.addEventListener('mouseenter', function() {
+                currentFocus = index;
+                highlightSuggestion(suggestionsContainer.querySelectorAll('.suggestion-item'));
+            });
+
+            suggestionsContainer.appendChild(item);
+        });
+
+        // Position relative to input
+        const inputWrapper = inputElement.closest('.input-group, .modern-search, .modern-search-lg');
+        if (inputWrapper) {
+            inputWrapper.style.position = 'relative';
+            inputWrapper.appendChild(suggestionsContainer);
+        }
+    }
+
+    function hideSuggestions() {
+        if (suggestionsContainer) {
+            suggestionsContainer.remove();
+            suggestionsContainer = null;
+            currentFocus = -1;
+        }
+    }
+
+    function highlightSuggestion(items) {
+        items.forEach((item, index) => {
+            if (index === currentFocus) {
+                item.style.backgroundColor = '#f8f9fa';
+            } else {
+                item.style.backgroundColor = 'white';
+            }
+        });
+    }
+
+    function highlightMatch(text, query) {
+        const regex = new RegExp(`(${query})`, 'gi');
+        return text.replace(regex, '<mark class="bg-warning">$1</mark>');
+    }
+
+    function getIconForType(type) {
+        switch (type) {
+            case 'product': return 'fa-box';
+            case 'category': return 'fa-tags';
+            case 'suggestion': return 'fa-search';
+            default: return 'fa-search';
+        }
+    }
+
+    function getTypeLabel(type) {
+        switch (type) {
+            case 'product': return 'Produk';
+            case 'category': return 'Kategori';
+            case 'suggestion': return 'Saran';
+            default: return '';
+        }
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+});
+</script>

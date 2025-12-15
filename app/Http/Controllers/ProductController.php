@@ -15,26 +15,107 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         // Ambil input pencarian dari form
-        $search = $request->input('search');
+        $search = trim($request->input('search'));
 
-        // Query produk dengan filter pencarian
+        // Query produk dengan filter pencarian yang lebih pintar
         $products = Products::query();
-        
+
         if ($search) {
-            $products = $products->where('nama', 'LIKE', "%{$search}%");
+            // Split search terms untuk multiple keywords
+            $searchTerms = explode(' ', $search);
+
+            $products = $products->where(function($query) use ($search, $searchTerms) {
+                // Search di nama produk (case-insensitive)
+                $query->whereRaw('LOWER(nama) LIKE LOWER(?)', ["%{$search}%"]);
+
+                // Search di deskripsi (case-insensitive)
+                $query->orWhereRaw('LOWER(deskripsi) LIKE LOWER(?)', ["%{$search}%"]);
+
+                // Search di kategori (case-insensitive)
+                $query->orWhereHas('category', function($q) use ($search) {
+                    $q->whereRaw('LOWER(nama) LIKE LOWER(?)', ["%{$search}%"]);
+                });
+
+                // Multiple keywords search
+                foreach ($searchTerms as $term) {
+                    if (strlen($term) > 2) { // Minimal 3 karakter
+                        $query->orWhereRaw('LOWER(nama) LIKE LOWER(?)', ["%{$term}%"])
+                              ->orWhereRaw('LOWER(deskripsi) LIKE LOWER(?)', ["%{$term}%"]);
+                    }
+                }
+            });
         }
-        
-        $products = $products->paginate(12);
-        
-        // Ambil semua kategori untuk ditampilkan (dengan cache)
-        $categories = Cache::remember('categories', 3600, function () {
-            return Category::all();
+
+        $products = $products->paginate(12)->appends(request()->query());
+
+        // Ambil semua kategori untuk ditampilkan (dengan cache) dan muat produknya
+        $categories = Cache::remember('categories_with_products', 3600, function () {
+            return Category::with('products')->get();
         });
 
         return view('pages.orders', [
             'products' => $products,
             'categories' => $categories,
+            'searchTerm' => $search, // Kirim search term ke view
         ]);
+    }
+
+    /**
+     * API endpoint untuk search suggestions
+     */
+    public function searchSuggestions(Request $request)
+    {
+        $query = trim($request->input('q', ''));
+
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $suggestions = [];
+
+        // Cari produk berdasarkan nama
+        $products = Products::whereRaw('LOWER(nama) LIKE LOWER(?)', ["%{$query}%"])
+                           ->limit(5)
+                           ->get(['nama', 'id']);
+
+        foreach ($products as $product) {
+            $suggestions[] = [
+                'text' => $product->nama,
+                'type' => 'product',
+                'url' => route('products.show', $product->id)
+            ];
+        }
+
+        // Cari kategori
+        $categories = Category::whereRaw('LOWER(nama) LIKE LOWER(?)', ["%{$query}%"])
+                             ->limit(3)
+                             ->get(['nama', 'id']);
+
+        foreach ($categories as $category) {
+            $suggestions[] = [
+                'text' => 'Kategori: ' . $category->nama,
+                'type' => 'category',
+                'url' => route('pages.orders') . '?search=' . urlencode($category->nama)
+            ];
+        }
+
+        // Jika tidak ada hasil, berikan suggestions umum
+        if (empty($suggestions)) {
+            $commonSearches = ['joran', 'reel', 'kail', 'umpan', 'pakaian'];
+            $matching = array_filter($commonSearches, function($item) use ($query) {
+                return stripos($item, $query) !== false;
+            });
+
+            foreach (array_slice($matching, 0, 3) as $suggestion) {
+                $suggestions[] = [
+                    'text' => $suggestion,
+                    'type' => 'suggestion',
+                    'url' => route('pages.orders') . '?search=' . urlencode($suggestion)
+                ];
+            }
+        }
+
+        return response()->json($suggestions);
     }
 
     /**

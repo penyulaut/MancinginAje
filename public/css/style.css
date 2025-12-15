@@ -279,6 +279,95 @@ footer {
     box-shadow: var(--shadow-lg);
 }
 
+/* Modern Pagination */
+.modern-pagination-container {
+    background: white;
+    border-radius: var(--radius);
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid #f0f0f0;
+}
+
+.modern-pagination {
+    margin: 0;
+    gap: 0.25rem;
+}
+
+.modern-pagination .page-link {
+    color: var(--primary);
+    background-color: white;
+    border: 2px solid #e9ecef;
+    border-radius: 50px !important;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    margin: 0 2px;
+    min-width: 45px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modern-pagination .page-link:hover {
+    color: white;
+    background-color: var(--primary);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.modern-pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    border-color: var(--primary);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.modern-pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    cursor: not-allowed;
+}
+
+.modern-pagination .page-link i {
+    font-size: 0.8rem;
+}
+
+/* Pagination Info */
+.pagination-info {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+/* Jump to Page */
+.jump-to-page .form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(30, 136, 229, 0.15);
+}
+
+/* Responsive Pagination */
+@media (max-width: 576px) {
+    .modern-pagination .page-link span {
+        display: none;
+    }
+
+    .modern-pagination .page-link {
+        padding: 0.5rem 0.75rem;
+        min-width: 40px;
+    }
+
+    .modern-pagination-container {
+        padding: 1rem;
+    }
+
+    .jump-to-page {
+        display: none; /* Hide jump to page on mobile */
+    }
+}
+
 /* Loading Animation */
 @keyframes pulse {
     0%, 100% { opacity: 1; }
