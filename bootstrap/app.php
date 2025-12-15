@@ -15,5 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            return redirect('/')->with('csrf_error', 'Page expired, coba login ulang');
+        });
     })->create();

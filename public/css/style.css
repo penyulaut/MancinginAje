@@ -1,53 +1,370 @@
-:root{
-    --primary: #b6895b;
-    --bg:#010101;
+:root {
+    --primary: #1e88e5;
+    --secondary: #26a69a;
+    --danger: #ef5350;
+    --warning: #ffa726;
+    --success: #66bb6a;
+    --dark: #212529;
+    --light: #f8f9fa;
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-hero: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e88e5 100%);
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 20px rgba(0,0,0,0.15);
+    --radius: 12px;
 }
 
-.body{
-    background-color: var(--bg);
+* {
+    transition: all 0.3s ease;
 }
 
-.hero {
-  background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('/images/mancing.jpg') center/cover no-repeat;
-  height: 100vh;
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--dark);
+    overflow-x: hidden;
 }
 
-.navbar{
-  background-color: var(--bg);
-  border-color: var(--primary);
-  opacity: 0.87;
+/* Modern Navbar */
+.modern-navbar {
+    background: white;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 1rem 0;
 }
 
-footer{
-    background-color: var(--bg);
+.modern-navbar .navbar-brand {
+    font-size: 1.5rem;
+    color: var(--dark) !important;
 }
 
-.search-bar{
+.modern-navbar .nav-link {
+    color: var(--dark);
+    font-weight: 500;
+    position: relative;
+    transition: color 0.3s;
+}
+
+.modern-navbar .nav-link:hover {
+    color: var(--primary);
+}
+
+.modern-search {
+    max-width: 600px;
+}
+
+.modern-search input {
+    border: 1px solid #e0e0e0;
+    border-radius: 50px;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s;
+}
+
+.modern-search input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(30,136,229,0.1);
+}
+
+.modern-search .input-group-text {
+    border-radius: 50px 0 0 50px;
+}
+
+/* Hero Modern */
+.hero-modern {
+    background: var(--gradient-hero);
+    min-height: 85vh;
+    padding-top: 100px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-modern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('/images/mancing.jpg') center/cover;
+    opacity: 0.1;
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.animate-fade-in {
+    animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Feature Cards */
+.feature-card {
+    background: white;
+    border-radius: var(--radius);
+    transition: all 0.3s;
+    border: 1px solid #f0f0f0;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Product Cards Modern */
+.product-card-modern {
+    background: white;
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.3s;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid #f0f0f0;
+}
+
+.product-card-modern:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+}
+
+.product-image-wrapper {
+    position: relative;
+    height: 250px;
+    overflow: hidden;
+    background: #f8f9fa;
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+}
+
+.product-card-modern:hover .product-image {
+    transform: scale(1.1);
+}
+
+.product-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.product-card-modern:hover .product-overlay {
+    opacity: 1;
+}
+
+.product-price {
+    color: var(--primary);
+}
+
+.bg-success-soft {
+    background-color: rgba(102, 187, 106, 0.1);
+}
+
+/* Buttons */
+.btn {
+    font-weight: 600;
+    padding: 0.5rem 1.5rem;
+    border-radius: 50px;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: var(--primary);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #1565c0;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--primary);
+    color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary);
+    color: white;
+}
+
+/* Tabs */
+.nav-pills .nav-link {
+    border-radius: 50px;
+    padding: 0.75rem 1.5rem;
+    margin: 0 0.25rem;
+    font-weight: 600;
+    color: #666;
+    border: 1px solid #e0e0e0;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: #f8f9fa;
+    color: var(--primary);
+}
+
+.nav-pills .nav-link.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+}
+
+/* Search Bar */
+.search-bar {
     margin-top: 100px;
     margin-bottom: 30px;
 }
 
-/* Tabs Kategori */
-.custom-tabs .nav-link{
-    border-radius: 50px; /* pill shape */
-    padding: 0.5rem 1.5rem;
-    margin: 0 0.25rem;
-    font-weight: 500;
-    color: #555;
-    transition: all 0.3s ease;
+/* Footer */
+footer {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
 }
 
-.custom-tabs .nav-link:hover {
-    background-color: var(--bg); /* highlight on hover */
-    color: #fff;
+/* Dropdown */
+.dropdown-menu {
+    border: none;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
 }
 
-.custom-tabs .nav-link.active {
-    background-color: #ffc107;
-    color: #fff;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+.dropdown-item {
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s;
 }
-/* Tab Kategori end */
+
+.dropdown-item:hover {
+    background: #f8f9fa;
+    padding-left: 2rem;
+}
+
+/* Badge */
+.badge {
+    font-weight: 600;
+    padding: 0.35em 0.65em;
+}
+
+/* Card Hover Effects */
+.card {
+    transition: all 0.3s;
+    border: none;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Loading Animation */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Contact Section */
+.contact-info-card {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s;
+    border: 1px solid #f0f0f0;
+}
+
+.contact-info-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-5px);
+}
+
+.contact-form-card {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+}
+
+.icon-box {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Form Controls Modern */
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(30,136,229,0.15);
+}
+
+.form-control-lg {
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
+}
+
+.form-control {
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+/* Modern Search Large */
+.modern-search-lg input {
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+}
+
+.modern-search-lg .input-group-text {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px 0 0 12px;
+}
+
+.modern-search-lg .btn {
+    border-radius: 0 12px 12px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-modern {
+        padding-top: 80px;
+        min-height: 70vh;
+    }
+    
+    .display-3 {
+        font-size: 2rem;
+    }
+    
+    .product-card-modern {
+        margin-bottom: 1rem;
+    }
+}
 
 .modal-header{
     background-color: var(--primary);

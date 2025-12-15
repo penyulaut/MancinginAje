@@ -40,3 +40,8 @@ Route::get('/login', [App\Http\Controllers\AuthController::class, 'showLoginForm
 Route::post('/login', [App\Http\Controllers\AuthController::class, 'submitLogin'])->name('login.submit');
 
 Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
+
+// Test route for CSRF error (remove in production)
+Route::get('/test-csrf', function() {
+    return view('test-csrf');
+})->name('test.csrf');

@@ -35,6 +35,14 @@ class AuthController extends Controller
 
         Auth::login($user);
 
+        // Simpan user info di session untuk performa
+        session([
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'user_email' => $user->email,
+            'user_role' => $user->role,
+        ]);
+
         return redirect()->route('pages.beranda')->with('success', 'Registrasi berhasil!');
     }
 
@@ -51,12 +59,36 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
+            // Simpan user info di session untuk performa
+            $user = Auth::user();
+            session([
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'user_email' => $user->email,
+                'user_role' => $user->role,
+            ]);
+            
+            // Regenerate CSRF token only, keep session ID
+            $request->session()->regenerateToken();
+            
             return redirect()->intended(route('pages.beranda'));
         }
 
         return back()->withErrors([
             'email' => 'Email atau password salah.',
         ]);
+    }
+
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        
+        // Clear user session data
+        $request->session()->forget(['user_id', 'user_name', 'user_email', 'user_role']);
+        
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect('/')->with('success', 'Berhasil logout!');
     }
 }

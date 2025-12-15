@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Products;
 use App\Models\Category;
+use Illuminate\Support\Facades\Cache;
 
 class ProductController extends Controller
 {
@@ -23,10 +24,12 @@ class ProductController extends Controller
             $products = $products->where('nama', 'LIKE', "%{$search}%");
         }
         
-        $products = $products->get();
+        $products = $products->paginate(12);
         
-        // Ambil semua kategori untuk ditampilkan
-        $categories = Category::all();
+        // Ambil semua kategori untuk ditampilkan (dengan cache)
+        $categories = Cache::remember('categories', 3600, function () {
+            return Category::all();
+        });
 
         return view('pages.orders', [
             'products' => $products,

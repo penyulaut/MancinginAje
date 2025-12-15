@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Products;
 use App\Models\Category;
+use Illuminate\Support\Facades\Cache;
 
 class BerandaController extends Controller
 {
@@ -13,8 +14,13 @@ class BerandaController extends Controller
      */
     public function index()
     {
-        $categories = Category::all();
-        $products = Products::inRandomOrder()->limit(8)->get();
+        $categories = Cache::remember('categories', 3600, function () {
+            return Category::all();
+        });
+        
+        $products = Cache::remember('featured_products', 1800, function () {
+            return Products::inRandomOrder()->limit(8)->get();
+        });
         
         return view('pages.beranda', [
             'categories' => $categories,
