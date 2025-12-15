@@ -15,13 +15,27 @@ class AuthController extends Controller
 
     public function submitRegister(Request $request)
     {
-        $data = new User();
-        $data->name = $request->name;
-        $data->email = $request->email;
-        $data->password = bcrypt($request->password);
-        $data->save();
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:users',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|in:customer,seller',
+            'address' => 'nullable|string|max:500',
+            'phone' => 'nullable|string|max:20',
+        ]);
 
-        return redirect('/login')->with('success', 'Registration successful. Please login.');
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => $validated['role'],
+            'address' => $validated['address'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+        ]);
+
+        Auth::login($user);
+
+        return redirect()->route('pages.beranda')->with('success', 'Registrasi berhasil!');
     }
 
     public function showLoginForm()
@@ -31,22 +45,18 @@ class AuthController extends Controller
 
     public function submitLogin(Request $request)
     {
-        $data = User::where('name', $request->name)->first();
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-        if($data && \Hash::check($request->password, $data->password)){
-            Auth::login($data);
+        if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            return redirect('/beranda')->with('success', 'Login successful');
+            return redirect()->intended(route('pages.beranda'));
         }
 
-        return redirect('/login')->with('error', 'Invalid credentials');
-    }
-
-    public function logout(Request $request)
-    {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-        return redirect('/beranda')->with('success', 'Logged out successfully');
+        return back()->withErrors([
+            'email' => 'Email atau password salah.',
+        ]);
     }
 }

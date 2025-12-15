@@ -6,7 +6,8 @@ use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Database\Seeders\CategoriesSeeder;
-use Database\Seeders\ProductSeeder;
+use Database\Seeders\ProductSeederSample;
+use Database\Seeders\UserSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -23,8 +24,9 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
+            UserSeeder::class,
             CategoriesSeeder::class,
-            ProductSeeder::class,
+            ProductSeederSample::class,
         ]);
     }   
 }

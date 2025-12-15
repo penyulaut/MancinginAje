@@ -15,17 +15,32 @@ class CategoriesSeeder extends Seeder
     {
         DB::table('categories')->insert([
             [
-                'nama' => 'Makanan',
+                'nama' => 'Joran',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'nama' => 'Minuman',
+                'nama' => 'Reel',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'nama' => 'Snack',
+                'nama' => 'Kail',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama' => 'Umpan',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama' => 'Pakaian',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama' => 'Aksesoris',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

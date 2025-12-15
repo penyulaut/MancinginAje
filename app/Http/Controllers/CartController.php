@@ -14,13 +14,27 @@ class CartController extends Controller
     {
         $cart = session()->get('cart', []);
         $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['harga'] * $item['quantity'];
-        }    
+        $items = [];
 
+        foreach ($cart as $productId => $item) {
+            $product = Products::find($productId);
+            if ($product) {
+                $items[] = [
+                    'product_id' => $productId,
+                    'product' => $product,
+                    'quantity' => $item['quantity'],
+                    'price' => $item['harga'] ?? $item['price'],
+                    'subtotal' => ($item['harga'] ?? $item['price']) * $item['quantity'],
+                ];
+                $total += ($item['harga'] ?? $item['price']) * $item['quantity'];
+            }
+        }
 
-
-        return view('pages.cart', compact('cart', 'total'));
+        return view('pages.cart', [
+            'items' => $items,
+            'cart' => $cart,
+            'total' => $total
+        ]);
     }
 
     /**
@@ -82,7 +96,20 @@ class CartController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $quantity = $request->input('quantity', 1);
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$id])) {
+            if ($quantity <= 0) {
+                unset($cart[$id]);
+            } else {
+                $cart[$id]['quantity'] = $quantity;
+            }
+        }
+
+        session()->put('cart', $cart);
+
+        return back()->with('success', 'Keranjang diperbarui');
     }
 
     /**

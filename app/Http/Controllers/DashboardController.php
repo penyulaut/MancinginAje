@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Products;
+use App\Models\Orders;
+use App\Models\Category;
 
 class DashboardController extends Controller
 {
@@ -12,8 +15,23 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        $products = Products::all();       
-        return view('dashboard.index', compact('products'));
+        $user = Auth::user();
+
+        if ($user && $user->role == 'seller') {
+            // Dashboard for sellers - show their products and orders
+            $products = Products::all();
+            $totalProducts = $products->count();
+            $totalOrders = Orders::count();
+
+            return view('dashboard.index', [
+                'products' => $products,
+                'totalProducts' => $totalProducts,
+                'totalOrders' => $totalOrders,
+            ]);
+        }
+
+        // Default to customer dashboard
+        return redirect()->route('pages.beranda');
     }
 
     /**
@@ -21,15 +39,8 @@ class DashboardController extends Controller
      */
     public function create()
     {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-       
+        $categories = Category::all();
+        return view('dashboard.create', compact('categories'));
     }
 
     /**

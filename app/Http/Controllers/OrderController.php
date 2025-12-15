@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Orders;
 use App\Models\Order_items;
 
@@ -30,7 +31,7 @@ class OrderController extends Controller
 
         // Simpan data order ke database
         $order = Orders::create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'total_harga' => $total,
             'status' => 'pending',
         ]);
@@ -51,13 +52,13 @@ class OrderController extends Controller
         return redirect()->route('pages.beranda')->with('success', 'Order placed successfully!');
     }
 
-    public function showOrders()
+    public function showorders()
     {
-        $orders = \App\Models\Orders::with('items.product')
-            ->where('user_id', auth()->id())
-            ->latest()
-            ->get();
+        $user = Auth::user();
+        $orders = Orders::where('user_id', $user->id)->with('items')->latest()->paginate(10);
 
-        return view('pages.YourOrders', compact('orders'));
+        return view('pages.YourOrders', [
+            'orders' => $orders,
+        ]);
     }
 }

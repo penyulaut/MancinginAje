@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Products;
+use App\Models\Category;
 
 class ProductController extends Controller
 {
@@ -15,22 +16,22 @@ class ProductController extends Controller
         // Ambil input pencarian dari form
         $search = $request->input('search');
 
-        // Jika ada keyword pencarian
+        // Query produk dengan filter pencarian
+        $products = Products::query();
+        
         if ($search) {
-            // Filter produk berdasarkan nama yang mengandung keyword
-            $products = Products::where('nama', 'LIKE', "%{$search}%")->get();
-            $makanan = Products::where('category_id', 1)->where('nama', 'LIKE', "%{$search}%")->get();
-            $minuman = Products::where('category_id', 2)->where('nama', 'LIKE', "%{$search}%")->get();
-            $snack = Products::where('category_id', 3)->where('nama', 'LIKE', "%{$search}%")->get();
-        } else {
-            // Jika tidak ada pencarian, tampilkan semua data
-            $products = Products::all();
-            $makanan = Products::where('category_id', 1)->get();
-            $minuman = Products::where('category_id', 2)->get();
-            $snack = Products::where('category_id', 3)->get();
+            $products = $products->where('nama', 'LIKE', "%{$search}%");
         }
+        
+        $products = $products->get();
+        
+        // Ambil semua kategori untuk ditampilkan
+        $categories = Category::all();
 
-        return view('pages.orders', compact('products','makanan', 'minuman', 'snack'));
+        return view('pages.orders', [
+            'products' => $products,
+            'categories' => $categories,
+        ]);
     }
 
     /**
@@ -72,8 +73,8 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        $product = Products::findOrFail($id);
-        return view('pages.detail', compact('product'));
+        $product = Products::with('category')->findOrFail($id);
+        return view('pages.detail-product', compact('product'));
     }
 
     /**
