@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\LoginRequest;
 
 class AuthController extends Controller
 {
@@ -13,16 +15,9 @@ class AuthController extends Controller
         return view('auth.register');
     }
 
-    public function submitRegister(Request $request)
+    public function submitRegister(RegisterRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:users',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:customer,seller',
-            'address' => 'nullable|string|max:500',
-            'phone' => 'nullable|string|max:20',
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
             'name' => $validated['name'],
@@ -35,13 +30,16 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        // Simpan user info di session untuk performa
         session([
             'user_id' => $user->id,
             'user_name' => $user->name,
             'user_email' => $user->email,
             'user_role' => $user->role,
         ]);
+
+        if ($user->role === 'seller') {
+            return redirect()->route('dashboard.index')->with('success', 'Registrasi berhasil! Selamat datang, Seller.');
+        }
 
         return redirect()->route('pages.beranda')->with('success', 'Registrasi berhasil!');
     }
@@ -51,15 +49,11 @@ class AuthController extends Controller
         return view('auth.login');
     }   
 
-    public function submitLogin(Request $request)
+    public function submitLogin(LoginRequest $request)
     {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        $credentials = $request->validated();
 
         if (Auth::attempt($credentials)) {
-            // Simpan user info di session untuk performa
             $user = Auth::user();
             session([
                 'user_id' => $user->id,
@@ -67,10 +61,13 @@ class AuthController extends Controller
                 'user_email' => $user->email,
                 'user_role' => $user->role,
             ]);
-            
-            // Regenerate CSRF token only, keep session ID
+
             $request->session()->regenerateToken();
-            
+
+            if ($user->role === 'seller') {
+                return redirect()->intended(route('dashboard.index'));
+            }
+
             return redirect()->intended(route('pages.beranda'));
         }
 

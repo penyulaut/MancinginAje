@@ -123,7 +123,8 @@ class ProductController extends Controller
      */
     public function create()
     {
-        return view('dashboard.create');
+        $categories = Category::all();
+        return view('dashboard.create', compact('categories'));
     }
 
     /**
@@ -147,6 +148,11 @@ class ProductController extends Controller
             $validated['gambar'] = 'storage/' . $path;
         }
 
+        // set seller ownership
+        if ($request->user()) {
+            $validated['seller_id'] = $request->user()->id;
+        }
+
         Products::create($validated);
 
         return redirect()->route('dashboard.index')->with('success', 'Produk berhasil ditambahkan.');
@@ -166,8 +172,8 @@ class ProductController extends Controller
      */
     public function edit(string $id)
     {
-        $products = Products::all();
-        $productsDetail = Products::findOrFail($id);
+        $products = Products::where('seller_id', auth()->id())->get();
+        $productsDetail = Products::where('seller_id', auth()->id())->findOrFail($id);
         return view('dashboard.create', compact('products', 'productsDetail'));
     }
 
@@ -192,7 +198,12 @@ class ProductController extends Controller
             $validated['gambar'] = 'storage/' . $path;
         }
 
-        Products::where('id', $id)->update($validated);
+        $product = Products::findOrFail($id);
+        if ($product->seller_id != auth()->id()) {
+            return redirect()->route('dashboard.index')->with('error', 'Akses ditolak: bukan pemilik produk.');
+        }
+
+        $product->update($validated);
 
         return redirect()->route('dashboard.index')->with('success', 'Produk berhasil diperbaharui.');
     }
@@ -202,7 +213,27 @@ class ProductController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $product = Products::findOrFail($id);
+
+        if ($product->seller_id != auth()->id()) {
+            return redirect()->route('dashboard.index')->with('error', 'Akses ditolak: bukan pemilik produk.');
+        }
+
+        // Hapus file gambar jika ada dan berada di storage
+        try {
+            if ($product->gambar) {
+                $path = str_replace('storage/', '', $product->gambar);
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+                }
+            }
+        } catch (\Exception $e) {
+            // jangan gagal hanya karena file
+        }
+
+        $product->delete();
+
+        return redirect()->route('dashboard.index')->with('success', 'Produk berhasil dihapus.');
     }
     
 }

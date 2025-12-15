@@ -2,132 +2,135 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+use App\Services\MidtransService;
 use App\Models\Orders;
 use App\Models\Order_items;
 use App\Models\Products;
-use App\Services\MidtransService;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class PaymentController extends Controller
 {
-    protected $midtransService;
+    protected $midtrans;
 
-    public function __construct()
+    public function __construct(MidtransService $midtrans)
     {
         $this->middleware('auth');
-        $this->midtransService = new MidtransService();
+        $this->midtrans = $midtrans;
     }
 
     public function index()
     {
         $cart = session()->get('cart', []);
-        
         if (empty($cart)) {
             return redirect()->route('cart.index')->with('error', 'Keranjang kosong');
         }
 
+        $items = [];
         $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['harga'] * $item['quantity'];
+        $productIds = array_keys($cart);
+        $products = Products::whereIn('id', $productIds)->get()->keyBy('id');
+
+        foreach ($cart as $productId => $data) {
+            $product = $products->get($productId);
+            if (!$product) continue;
+            $quantity = (int) ($data['quantity'] ?? 1);
+            $items[] = ['product' => $product, 'quantity' => $quantity, 'price' => $product->harga];
+            $total += $product->harga * $quantity;
         }
 
-        $user = Auth::user();
-        
-        return view('pages.payment', [
-            'cart' => $cart,
-            'total' => $total,
-            'user' => $user,
-        ]);
+        return view('pages.payment', compact('items', 'total'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'customer_name' => 'required|string',
-            'customer_email' => 'required|email',
-            'customer_phone' => 'required|string',
-            'shipping_address' => 'required|string',
+            'customer_name' => 'required|string|max:255',
+            'customer_email' => 'required|email|max:255',
+            'customer_phone' => 'required|string|max:30',
+            'shipping_address' => 'required|string|max:1000',
             'payment_method' => 'required|string|in:bank_transfer,e_wallet,card',
         ]);
 
         $cart = session()->get('cart', []);
-        
         if (empty($cart)) {
-            return back()->with('error', 'Keranjang kosong');
+            return redirect()->route('cart.index')->with('error', 'Keranjang kosong');
         }
 
-        $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['harga'] * $item['quantity'];
-        }
-
+        DB::beginTransaction();
         try {
-            // Create order
+            // load products and calculate total (stock already reserved when added to cart)
+            $productIds = array_keys($cart);
+            $products = Products::whereIn('id', $productIds)->get()->keyBy('id');
+
+            $total = 0;
+            foreach ($cart as $productId => $data) {
+                $product = $products->get($productId);
+                if (!$product) {
+                    throw new \Exception('Produk tidak ditemukan: ' . $productId);
+                }
+
+                $quantity = (int) ($data['quantity'] ?? 1);
+                $total += $product->harga * $quantity;
+            }
+
+            // create order
             $order = Orders::create([
                 'user_id' => Auth::id(),
+                'total_harga' => $total,
+                'status' => 'pending',
                 'customer_name' => $validated['customer_name'],
                 'customer_email' => $validated['customer_email'],
                 'customer_phone' => $validated['customer_phone'],
                 'shipping_address' => $validated['shipping_address'],
                 'payment_method' => $validated['payment_method'],
-                'total_harga' => $total,
-                'status' => 'pending',
                 'payment_status' => 'pending',
             ]);
 
-            // Create order items
-            foreach ($cart as $productId => $item) {
+            // create order items (stock already decremented when added to cart)
+            foreach ($cart as $productId => $data) {
+                $product = $products->get($productId);
+                $quantity = (int) ($data['quantity'] ?? 1);
+
                 Order_items::create([
                     'order_id' => $order->id,
-                    'product_id' => $productId,
-                    'quantity' => $item['quantity'],
-                    'price' => $item['harga'],
+                    'product_id' => $product->id,
+                    'quantity' => $quantity,
+                    'price' => $product->harga,
                 ]);
             }
 
-            // Get snap token from Midtrans
-            $snapToken = $this->midtransService->createSnapToken($order);
-
-            return view('pages.payment-process', [
-                'snapToken' => $snapToken,
-                'order' => $order,
-            ]);
+            DB::commit();
         } catch (\Exception $e) {
-            return back()->with('error', 'Error: ' . $e->getMessage());
+            DB::rollBack();
+            return back()->with('error', 'Gagal membuat order: ' . $e->getMessage());
         }
+
+        try {
+            $snapToken = $this->midtrans->createSnapToken($order);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Midtrans error: ' . $e->getMessage());
+        }
+
+        return view('pages.payment-checkout', compact('order', 'snapToken'));
     }
 
     public function finish(Request $request)
     {
-        $orderId = $request->input('order_id');
-        $order = Orders::find($orderId);
-
-        if (!$order) {
-            return redirect()->route('pages.beranda')->with('error', 'Order tidak ditemukan');
-        }
-
-        if ($order->payment_status == 'paid') {
-            // Clear cart
-            session()->forget('cart');
-            
-            return view('pages.payment-success', [
-                'order' => $order,
-            ]);
-        }
-
-        return redirect()->route('cart.index')->with('error', 'Pembayaran belum berhasil');
+        // Show success page; keep it simple
+        session()->forget('cart');
+        return view('pages.payment-success');
     }
 
     public function notification(Request $request)
     {
-        $notification = json_decode($request->getContent());
-
+        $payload = json_decode($request->getContent());
         try {
-            $this->midtransService->handleNotification($notification);
-            http_response_code(200);
+            $this->midtrans->handleNotification($payload);
+            return response('OK', 200);
         } catch (\Exception $e) {
-            http_response_code(400);
+            return response('Error', 500);
         }
     }
 }

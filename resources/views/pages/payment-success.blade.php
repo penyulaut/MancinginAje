@@ -1,6 +1,15 @@
 @extends('layouts.main')
 
 @section('content')
+<div class="container py-6 text-center">
+    <h2>Pembayaran Berhasil</h2>
+    <p>Terima kasih! Pembayaran Anda telah diproses. Silakan cek halaman pesanan Anda untuk detailnya.</p>
+    <a href="{{ route('pages.yourorders') }}" class="btn btn-primary">Lihat Pesanan Saya</a>
+</div>
+@endsection
+@extends('layouts.main')
+
+@section('content')
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">

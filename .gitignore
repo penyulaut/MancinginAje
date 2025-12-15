@@ -1,32 +1,45 @@
-*.log
+# OS & editor files
 .DS_Store
-.env
-.env.backup
-.env.local
-.env.production
-.env.testing
-.phpactor.json
-.phpunit.result.cache
-/.fleet
+Thumbs.db
 /.idea
-/.nova
-/.phpunit.cache
 /.vscode
-/.zed
-/auth.json
+/.fleet
+
+# Environment
+.env
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Laravel / PHP
+/vendor/
 /bootstrap/cache/
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/app/
-/storage/framework/cache/
-/storage/framework/sessions/
-/storage/framework/views/
+/storage/framework/
 /storage/logs/
-/storage/pail
+.phpunit.result.cache
+.phpactor.json
+
+# Node
+/node_modules/
+/public/hot
+/public/build
+
+# Public storage symlink (when used)
+/public/storage
+
+# Database
+*.sqlite
+*.sqlite3
+
+# Misc large or generated
 /supabase/
-/vendor
+/storage/pail
+
+# Homestead
 Homestead.json
 Homestead.yaml
-Thumbs.db
+

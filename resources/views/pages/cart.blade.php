@@ -9,6 +9,10 @@
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
 
+        @if(session('warning'))
+            <div class="alert alert-warning">{{ session('warning') }}</div>
+        @endif
+
         @if(session('error'))
             <div class="alert alert-danger">{{ session('error') }}</div>
         @endif
@@ -46,7 +50,7 @@
                                         <td>
                                             <form action="{{ route('cart.update', $item['product_id']) }}" method="POST" class="d-flex gap-2">
                                                 @csrf
-                                                <input type="number" name="quantity" value="{{ $item['quantity'] }}" min="1" max="100" class="form-control" style="width: 70px;">
+                                                <input type="number" name="quantity" value="{{ $item['quantity'] }}" min="1" max="{{ $item['product']->stok }}" class="form-control" style="width: 70px;">
                                                 <button type="submit" class="btn btn-sm btn-primary">Update</button>
                                             </form>
                                         </td>

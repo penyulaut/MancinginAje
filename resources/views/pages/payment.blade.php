@@ -1,6 +1,65 @@
 @extends('layouts.main')
 
 @section('content')
+<div class="container py-6">
+    <h2 class="mb-4">Checkout</h2>
+
+    <form method="POST" action="{{ route('payment.store') }}">
+        @csrf
+
+        <div class="card mb-4 p-4">
+            <h5>Rincian Pesanan</h5>
+            <ul class="list-group list-group-flush mb-3">
+                @foreach($items as $it)
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ $it['product']->nama }}</strong>
+                            <div class="text-muted">Jumlah: {{ $it['quantity'] }}</div>
+                        </div>
+                        <div>Rp {{ number_format($it['product']->harga * $it['quantity'], 0, ',', '.') }}</div>
+                    </li>
+                @endforeach
+            </ul>
+            <div class="text-end fw-bold">Total: Rp {{ number_format($total, 0, ',', '.') }}</div>
+        </div>
+
+        <div class="card p-4 mb-4">
+            <h5>Data Pembeli</h5>
+            <div class="mb-3">
+                <label class="form-label">Nama</label>
+                <input type="text" name="customer_name" class="form-control" value="{{ old('customer_name', auth()->user()->name ?? '') }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="customer_email" class="form-control" value="{{ old('customer_email', auth()->user()->email ?? '') }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">No. HP</label>
+                <input type="text" name="customer_phone" class="form-control" value="{{ old('customer_phone', auth()->user()->phone ?? '') }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Alamat Pengiriman</label>
+                <textarea name="shipping_address" class="form-control" rows="3" required>{{ old('shipping_address', auth()->user()->address ?? '') }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Metode Pembayaran</label>
+                <select name="payment_method" class="form-select" required>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="e_wallet">E-Wallet</option>
+                    <option value="card">Kartu (Card)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <button class="btn btn-primary">Lanjut ke Pembayaran</button>
+        </div>
+    </form>
+</div>
+@endsection
+@extends('layouts.main')
+
+@section('content')
 <div class="container mt-5">
     <div class="row">
         <div class="col-md-12">

@@ -55,29 +55,52 @@ class CartController extends Controller
      */
     public function store(Request $request)
     {
-        $products = Products::find($request->id);
+        $validated = $request->validate([
+            'id' => 'required|integer|exists:products,id',
+            'quantity' => 'required|integer|min:1'
+        ]);
 
-        if (!$products) {
+        $product = Products::find($validated['id']);
+        if (!$product) {
             return redirect()->back()->with('error', 'Produk tidak ditemukan.');
         }
 
-        $cart = session()->get('cart', []);            
+        $qty = (int) $validated['quantity'];
+        $cart = session()->get('cart', []);
 
-        if (isset($cart[$products->id])) {
-            $cart[$products->id]['quantity'] += $request->quantity;
+        // existing quantity in cart
+        $existing = isset($cart[$product->id]) ? (int) $cart[$product->id]['quantity'] : 0;
+        $newTotal = $existing + $qty;
+
+        if ($newTotal > $product->stok) {
+            // cap to available stock
+            $allowedToAdd = max(0, $product->stok - $existing);
+            if ($allowedToAdd <= 0) {
+                return redirect()->route('cart.index')->with('error', 'Stok tidak cukup untuk menambahkan produk ini.');
+            }
+            $qty = $allowedToAdd;
+            session()->flash('warning', "Jumlah ditambah hanya {$qty} karena keterbatasan stok.");
+        }
+
+        if (isset($cart[$product->id])) {
+            $cart[$product->id]['quantity'] = $existing + $qty;
         } else {
-            $cart[$products->id] = [
-                "nama" => $products->nama,
-                "quantity" => $request->quantity,
-                "harga" => $products->harga,
-                "gambar" => $products->gambar
+            $cart[$product->id] = [
+                "nama" => $product->nama,
+                "quantity" => $qty,
+                "harga" => $product->harga,
+                "gambar" => $product->gambar
             ];
         }
 
-        session()->put('cart', $cart);        
+        session()->put('cart', $cart);
 
-        // setelah tambah, arahkan ke halaman cart
-        return redirect()->route('cart.index')->with('success', 'Produk berhasil ditambahkan ke keranjang!');        
+        // reserve stock immediately when added to cart
+        if ($qty > 0) {
+            $product->decrement('stok', $qty);
+        }
+
+        return redirect()->route('cart.index')->with('success', 'Produk berhasil ditambahkan ke keranjang!');
     }
 
     /**
@@ -101,17 +124,60 @@ class CartController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $quantity = $request->input('quantity', 1);
-        $cart = session()->get('cart', []);
+        $validated = $request->validate([
+            'quantity' => 'required|integer|min:0'
+        ]);
 
-        if (isset($cart[$id])) {
-            if ($quantity <= 0) {
-                unset($cart[$id]);
-            } else {
-                $cart[$id]['quantity'] = $quantity;
+        $quantity = (int) $validated['quantity'];
+        $cart = session()->get('cart', []);
+        if (!isset($cart[$id])) {
+            return back()->with('error', 'Produk tidak ditemukan di keranjang.');
+        }
+
+        $product = Products::find($id);
+        if (!$product) {
+            // product removed from catalog, refund reserved stock
+            $oldQty = $cart[$id]['quantity'];
+            unset($cart[$id]);
+            session()->put('cart', $cart);
+            if ($oldQty > 0) {
+                Products::where('id', $id)->increment('stok', $oldQty);
+            }
+            return back()->with('error', 'Produk tidak tersedia lagi.');
+        }
+
+        $oldQty = (int) $cart[$id]['quantity'];
+
+        if ($quantity <= 0) {
+            // remove from cart and restore stock
+            unset($cart[$id]);
+            session()->put('cart', $cart);
+            if ($oldQty > 0) {
+                $product->increment('stok', $oldQty);
+            }
+            return back()->with('success', 'Produk dihapus dari keranjang.');
+        }
+
+        // If increasing quantity, reserve additional stock
+        if ($quantity > $oldQty) {
+            $diff = $quantity - $oldQty;
+            if ($diff > $product->stok) {
+                $diff = $product->stok;
+                $quantity = $oldQty + $diff;
+                session()->flash('warning', "Jumlah disesuaikan menjadi {$quantity} karena keterbatasan stok.");
+            }
+            if ($diff > 0) {
+                $product->decrement('stok', $diff);
+            }
+        } elseif ($quantity < $oldQty) {
+            // If decreasing, release stock
+            $diff = $oldQty - $quantity;
+            if ($diff > 0) {
+                $product->increment('stok', $diff);
             }
         }
 
+        $cart[$id]['quantity'] = $quantity;
         session()->put('cart', $cart);
 
         return back()->with('success', 'Keranjang diperbarui');
@@ -123,10 +189,17 @@ class CartController extends Controller
     public function destroy(string $id)
     {
         $cart = session()->get('cart', []);
-
         if (isset($cart[$id])) {
+            $qty = (int) $cart[$id]['quantity'];
             unset($cart[$id]);
             session()->put('cart', $cart);
+            if ($qty > 0) {
+                // restore reserved stock
+                $product = Products::find($id);
+                if ($product) {
+                    $product->increment('stok', $qty);
+                }
+            }
         }
 
         return redirect()->route('cart.index')->with('success', 'Produk berhasil dihapus dari keranjang.');    

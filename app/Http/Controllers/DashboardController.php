@@ -19,9 +19,11 @@ class DashboardController extends Controller
 
         if ($user && $user->role == 'seller') {
             // Dashboard for sellers - show their products and orders
-            $products = Products::all();
+            $products = Products::where('seller_id', $user->id)->get();
             $totalProducts = $products->count();
-            $totalOrders = Orders::count();
+            $totalOrders = Orders::whereHas('items.product', function($q) use ($user){
+                $q->where('seller_id', $user->id);
+            })->count();
 
             return view('dashboard.index', [
                 'products' => $products,

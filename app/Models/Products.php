@@ -10,10 +10,15 @@ class Products extends Model
     // public $guarded = [];
 
     protected $table = 'products';
-    protected $fillable = ['nama', 'deskripsi', 'harga', 'stok', 'gambar','category_id'];
+    protected $fillable = ['nama', 'deskripsi', 'harga', 'stok', 'gambar','category_id', 'seller_id'];
 
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function seller()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'seller_id');
     }
 }

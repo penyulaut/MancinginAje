@@ -43,9 +43,9 @@
                         <label for="category_id" class="form-label">Kategori</label>
                         <select class="form-select" id="category_id" name="category_id" required>
                             <option value="" disabled>Pilih kategori</option>
-                            <option value="1" {{ old('category_id', $productsDetail->category_id?? '') == 1 ? 'selected' : '' }}>Makanan</option>
-                            <option value="2" {{ old('category_id', $productsDetail->category_id?? '') == 2 ? 'selected' : '' }}>Minuman</option>
-                            <option value="3" {{ old('category_id', $productsDetail->category_id?? '') == 3 ? 'selected' : '' }}>Snack</option>
+                            @foreach($categories as $cat)
+                                <option value="{{ $cat->id }}" {{ old('category_id', $productsDetail->category_id?? '') == $cat->id ? 'selected' : '' }}>{{ $cat->nama }}</option>
+                            @endforeach
                         </select>
                     </div>
 

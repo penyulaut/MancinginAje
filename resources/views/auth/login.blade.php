@@ -1,3 +1,38 @@
+@extends('layouts.main')
+
+@section('content')
+<div class="container py-6">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header">Masuk</div>
+                <div class="card-body">
+                    <form method="POST" action="{{ route('login.submit') }}">
+                        @csrf
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
+                            @error('email')<div class="text-danger small">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control" required>
+                            @error('password')<div class="text-danger small">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ route('register.show') }}">Belum punya akun? Daftar</a>
+                            <button class="btn btn-primary">Masuk</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
 <!doctype html>
 <html lang="en">
   <head>

@@ -39,7 +39,9 @@
             <th>Nama</th>
             <th>Deskripsi</th>
             <th>Harga</th>
+            <th>Stok</th>
             <th>Kategori</th>
+            <th>Penjual</th>
             <th>Aksi</th>
           </tr>
         </thead>
@@ -50,12 +52,17 @@
             <td>{{$item->nama}}</td>
             <td>{{$item->deskripsi}}</td>
             <td>Rp {{$item->harga}}</td>
-            <td>{{$item->category_id}}</td>
+            <td>{{ $item->stok }}</td>
+            <td>{{ optional($item->category)->nama ?? '-' }}</td>
+            <td>{{ optional($item->seller)->name ?? '—' }}</td>
             <td>
-              <button class="btn btn-sm btn-primary">
-                <a href="{{ route('dashboard.edit', ['id'=>$item->id]) }}" class="text-light">Edit</a>                
-              </button>
-              <button class="btn btn-sm btn-danger">Hapus</button>
+              <a href="{{ route('dashboard.edit', ['id'=>$item->id]) }}" class="btn btn-sm btn-primary text-light">Edit</a>
+
+              <form method="POST" action="{{ route('dashboard.destroy', ['id' => $item->id]) }}" style="display:inline-block" onsubmit="return confirm('Hapus produk ini?');">
+                @csrf
+                @method('DELETE')
+                <button class="btn btn-sm btn-danger">Hapus</button>
+              </form>
             </td>
           </tr> 
         @endforeach         
