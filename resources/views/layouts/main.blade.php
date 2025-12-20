@@ -16,6 +16,15 @@
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 
     <title>MancinginAje</title>
+    <style>
+      :root{ --navbar-height: 72px; }
+      .modern-navbar{ height: var(--navbar-height); }
+      /* reserve space for fixed navbar so page content isn't covered */
+      body { padding-top: var(--navbar-height); }
+      @media (max-width: 992px) {
+        :root{ --navbar-height: 90px; }
+      }
+    </style>
   </head>
   <body>
     {{-- Navbar --}}
@@ -26,7 +35,9 @@
         <x-toast type="warning" :message="session('csrf_error')" />
     @endif
 
-    @yield('content')
+    <main class="container-fluid">
+      @yield('content')
+    </main>
 
     <x-footer></x-footer> 
 

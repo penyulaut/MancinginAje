@@ -8,14 +8,50 @@
         </div>
     </div>
 
-    @if ($orders->isEmpty())
+    {{-- Tabs/navbar --}}
+    @php
+        $tab = request('tab', 'running');
+    @endphp
+
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link {{ $tab === 'running' ? 'active' : '' }}" href="{{ route('pages.yourorders', ['tab' => 'running']) }}">Pesanan Berjalan <span class="badge bg-light text-dark">{{ $ordersRunning->count() }}</span></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ $tab === 'unpaid' ? 'active' : '' }}" href="{{ route('pages.yourorders', ['tab' => 'unpaid']) }}">Belum Dibayar <span class="badge bg-light text-dark">{{ $ordersUnpaid->count() }}</span></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ $tab === 'completed' ? 'active' : '' }}" href="{{ route('pages.yourorders', ['tab' => 'completed']) }}">Pesanan Selesai <span class="badge bg-light text-dark">{{ $ordersCompleted->count() }}</span></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ $tab === 'cancelled' ? 'active' : '' }}" href="{{ route('pages.yourorders', ['tab' => 'cancelled']) }}">Pesanan Batal <span class="badge bg-light text-dark">{{ $ordersCancelled->count() }}</span></a>
+        </li>
+    </ul>
+
+    @php
+        if ($tab === 'unpaid') {
+            $list = $ordersUnpaid;
+            $emptyMessage = 'Tidak ada pesanan belum dibayar.';
+        } elseif ($tab === 'completed') {
+            $list = $ordersCompleted;
+            $emptyMessage = 'Tidak ada pesanan selesai.';
+        } elseif ($tab === 'cancelled') {
+            $list = $ordersCancelled;
+            $emptyMessage = 'Tidak ada pesanan batal.';
+        } else {
+            $list = $ordersRunning;
+            $emptyMessage = 'Tidak ada pesanan berjalan saat ini.';
+        }
+    @endphp
+
+    @if ($list->isEmpty())
         <div class="alert alert-info text-center py-5">
-            <h5>Belum ada pesanan</h5>
-            <p class="mb-3">Anda belum membuat pesanan. Mulai berbelanja sekarang!</p>
+            <h5>{{ $emptyMessage }}</h5>
+            <p class="mb-3">Anda dapat melihat pesanan lain di tab yang berbeda.</p>
             <a href="{{ route('pages.orders') }}" class="btn btn-warning">Belanja Sekarang</a>
         </div>
     @else
-        @foreach ($orders as $order)
+        @foreach ($list as $order)
             <div class="card mb-4 shadow-sm border-0">
                 <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                     <div class="row text-white align-items-center">
@@ -32,14 +68,14 @@
                                 @elseif($order->payment_status == 'paid') bg-success
                                 @elseif($order->payment_status == 'expired') bg-danger
                                 @else bg-secondary @endif">
-                                {{ ucfirst($order->payment_status) }}
+                                {{ ucfirst($order->payment_status ?? 'pending') }}
                             </span>
                             <span class="badge 
                                 @if($order->status == 'pending') bg-secondary
                                 @elseif($order->status == 'paid') bg-info
                                 @elseif($order->status == 'completed') bg-success
                                 @else bg-danger @endif">
-                                {{ ucfirst($order->status) }}
+                                {{ ucfirst($order->status ?? '-') }}
                             </span>
                         </div>
                     </div>
@@ -57,17 +93,8 @@
                         <div class="col-md-6">
                             <h6 class="fw-bold">Metode Pembayaran</h6>
                             <p class="mb-3">
-                                @if($order->payment_method == 'bank_transfer')
-                                    <i class="fas fa-university"></i> Transfer Bank
-                                @elseif($order->payment_method == 'e_wallet')
-                                    <i class="fas fa-wallet"></i> E-Wallet
-                                @elseif($order->payment_method == 'card')
-                                    <i class="fas fa-credit-card"></i> Kartu Kredit/Debit
-                                @else
-                                    {{ ucfirst($order->payment_method) }}
-                                @endif
+                                {{ ucfirst($order->payment_method ?? '-') }}
                             </p>
-                            
                             @if($order->transaction_id)
                                 <p><strong>ID Transaksi:</strong> {{ $order->transaction_id }}</p>
                             @endif
@@ -109,7 +136,7 @@
                     <div class="row">
                         <div class="col">
                             <small class="text-muted">
-                                <i class="fas fa-info-circle"></i> 
+                                <i class="fas fa-info-circle"></i>
                                 @if($order->payment_status == 'paid')
                                     Pesanan Anda telah dibayar. Sedang diproses untuk pengiriman.
                                 @elseif($order->payment_status == 'pending')
@@ -121,21 +148,20 @@
                                 @endif
                             </small>
                         </div>
-                        <div class="col-auto">
+                        <div class="col-auto d-flex gap-2">
                             @if($order->payment_status == 'pending' && $order->status == 'pending')
-                                <a href="{{ route('payment.index') }}" class="btn btn-sm btn-warning">Lanjutkan Pembayaran</a>
+                                <a href="{{ route('payment.retry', $order->id) }}" class="btn btn-sm btn-warning">Lanjutkan Pembayaran</a>
+
+                                <form method="POST" action="{{ route('orders.cancel', $order->id) }}" onsubmit="return confirm('Batalkan pesanan ini?');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Batalkan</button>
+                                </form>
                             @endif
                         </div>
                     </div>
                 </div>
             </div>
         @endforeach
-
-        @if($orders instanceof \Illuminate\Pagination\Paginator)
-            <div class="d-flex justify-content-center">
-                {{ $orders->links() }}
-            </div>
-        @endif
     @endif
 
     <div class="mt-4">
@@ -143,3 +169,5 @@
             <i class="fas fa-arrow-left"></i> Lanjut Belanja
         </a>
     </div>
+
+@endsection

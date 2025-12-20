@@ -31,9 +31,11 @@ Route::delete('/beranda/cart/{id}', [App\Http\Controllers\CartController::class,
 Route::middleware('auth')->group(function () {
     Route::get('/beranda/payment', [App\Http\Controllers\PaymentController::class, 'index'])->name('payment.index');
     Route::post('/beranda/payment', [App\Http\Controllers\PaymentController::class, 'store'])->name('payment.store');
+    Route::get('/beranda/payment/retry/{id}', [App\Http\Controllers\PaymentController::class, 'retry'])->name('payment.retry');
     Route::get('/beranda/payment/success', [App\Http\Controllers\PaymentController::class, 'finish'])->name('payment.finish');
     Route::post('/beranda/payment/notification', [App\Http\Controllers\PaymentController::class, 'notification'])->name('payment.notification');
     Route::get('/beranda/yourorders', [App\Http\Controllers\OrderController::class, 'showorders'])->name('pages.yourorders');
+    Route::post('/beranda/yourorders/{id}/cancel', [App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
     
     // Profile routes
     Route::get('/beranda/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
@@ -55,3 +57,18 @@ Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout'])->
 Route::get('/test-csrf', function() {
     return view('test-csrf');
 })->name('test.csrf');
+
+// Temporary debug route: show Midtrans config (trimmed) — remove after debugging
+Route::get('/_debug/midtrans-config', function() {
+    $cfg = config('midtrans');
+    // mask server key partially for safety
+    $cfg['server_key_masked'] = $cfg['server_key'] ? substr($cfg['server_key'], 0, 6) . '...' : null;
+    return response()->json([
+        'config' => $cfg,
+        'env_values' => [
+            'MIDTRANS_CLIENT_KEY' => env('MIDTRANS_CLIENT_KEY'),
+            'MIDTRANS_SERVER_KEY' => env('MIDTRANS_SERVER_KEY'),
+            'MIDTRANS_IS_PRODUCTION' => env('MIDTRANS_IS_PRODUCTION'),
+        ]
+    ]);
+});

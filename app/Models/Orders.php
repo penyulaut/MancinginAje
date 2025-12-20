@@ -17,6 +17,7 @@ class Orders extends Model
         'customer_phone',
         'shipping_address',
         'payment_method',
+        'snap_token',
         'transaction_id',
         'payment_status',
     ];

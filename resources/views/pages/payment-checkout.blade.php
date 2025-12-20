@@ -13,16 +13,19 @@
         <button id="pay-button" class="btn btn-success">Bayar Sekarang</button>
     </div>
 
-    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('midtrans.client_key') }}"></script>
+    @php
+        $midtransHost = config('midtrans.is_production') ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js';
+    @endphp
+    <script src="{{ $midtransHost }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
     <script>
         const snapToken = "{{ $snapToken }}";
         document.getElementById('pay-button').addEventListener('click', function () {
             window.snap.pay(snapToken, {
                 onSuccess: function(result){
-                    window.location.href = "{{ route('payment.finish') }}";
+                    window.location.href = "{{ route('payment.finish') }}?order_id={{ $order->id }}";
                 },
                 onPending: function(result){
-                    window.location.href = "{{ route('payment.finish') }}";
+                    window.location.href = "{{ route('payment.finish') }}?order_id={{ $order->id }}";
                 },
                 onError: function(result){
                     alert('Pembayaran gagal.');
