@@ -12,6 +12,10 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         //
+        // Register BiteshipService singleton
+        $this->app->singleton(BiteshipService::class, function ($app) {
+            return new BiteshipService();
+        });
     }
 
     /**

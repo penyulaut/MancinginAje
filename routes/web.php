@@ -19,6 +19,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsSeller::class])->gro
 // Products & Categories
 Route::get('/beranda/orders', [App\Http\Controllers\ProductController::class, 'index'])->name('pages.orders');
 Route::get('/api/search-suggestions', [App\Http\Controllers\ProductController::class, 'searchSuggestions'])->name('api.search.suggestions');
+use App\Http\Controllers\BiteshipController;
 Route::get('/beranda/detail/{id}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
 
 // Cart Routes
@@ -32,6 +33,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/beranda/payment', [App\Http\Controllers\PaymentController::class, 'index'])->name('payment.index');
     Route::post('/beranda/payment', [App\Http\Controllers\PaymentController::class, 'store'])->name('payment.store');
     Route::get('/beranda/payment/retry/{id}', [App\Http\Controllers\PaymentController::class, 'retry'])->name('payment.retry');
+
+// Biteship integration endpoints
+Route::post('/biteship/quote', [BiteshipController::class, 'quote']);
+Route::post('/biteship/create-shipment', [BiteshipController::class, 'createShipment']);
+Route::get('/biteship/track/{awb}', [BiteshipController::class, 'track']);
     Route::get('/beranda/payment/success', [App\Http\Controllers\PaymentController::class, 'finish'])->name('payment.finish');
     Route::post('/beranda/payment/notification', [App\Http\Controllers\PaymentController::class, 'notification'])->name('payment.notification');
     Route::get('/beranda/yourorders', [App\Http\Controllers\OrderController::class, 'showorders'])->name('pages.yourorders');
