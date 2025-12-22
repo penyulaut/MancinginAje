@@ -17,7 +17,7 @@ class PaymentController extends Controller
 
     public function __construct(MidtransService $midtrans)
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except('notification');
         $this->midtrans = $midtrans;
     }
 

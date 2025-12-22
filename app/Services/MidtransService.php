@@ -214,6 +214,20 @@ class MidtransService
 
     public function handleNotification($notification)
     {
+        // If Midtrans provided a signature_key, validate it to ensure the webhook is authentic.
+        if (is_object($notification) && property_exists($notification, 'signature_key')) {
+            $serverKey = config('midtrans.server_key');
+            $orderId = $notification->order_id ?? '';
+            $statusCode = $notification->status_code ?? '';
+            $grossAmount = $notification->gross_amount ?? '';
+
+            $expected = hash('sha512', $orderId . $statusCode . $grossAmount . $serverKey);
+            if (!hash_equals($expected, $notification->signature_key)) {
+                \Log::warning('Midtrans webhook signature mismatch', ['expected' => $expected, 'received' => $notification->signature_key, 'order_id' => $orderId]);
+                return false;
+            }
+        }
+
         $orderId = explode('-', $notification->order_id)[0];
         $order = \App\Models\Orders::find($orderId);
 
