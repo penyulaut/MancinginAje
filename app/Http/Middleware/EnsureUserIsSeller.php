@@ -13,7 +13,9 @@ class EnsureUserIsSeller
     public function handle(Request $request, Closure $next)
     {
         $user = $request->user();
-        if (!$user || ($user->role ?? 'customer') !== 'seller') {
+        // Allow both 'seller' and 'admin' to access seller-only routes
+        $role = $user->role ?? 'customer';
+        if (!$user || !in_array($role, ['seller', 'admin'])) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Akses ditolak. Hanya untuk penjual.'], 403);
             }

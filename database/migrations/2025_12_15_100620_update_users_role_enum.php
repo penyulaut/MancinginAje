@@ -13,8 +13,8 @@ return new class extends Migration
     public function up(): void
     {
         // Recreate the role column with admin included
-        DB::statement('ALTER TABLE users DROP CONSTRAINT users_role_check');
-        DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role::text = ANY (ARRAY['customer'::text, 'seller'::text, 'admin'::text]))");
+        DB::statement('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check');
+        DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role::text = ANY (ARRAY['customer'::text, 'admin'::text]))");
     }
 
     /**
@@ -23,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         // Revert back to original constraint
-        DB::statement('ALTER TABLE users DROP CONSTRAINT users_role_check');
+        DB::statement('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check');
         DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role::text = ANY (ARRAY['customer'::text, 'seller'::text]))");
     }
 };

@@ -1,13 +1,14 @@
   <style>   
     .sidebar {
-      height: 100vh;
       background-color: #212529;
       color: #fff;
       position: fixed;
-      width: 250px;
-      top: 0;
+      width: 220px;
+      top: var(--navbar-height);
       left: 0;
       padding: 20px;
+      height: calc(100vh - var(--navbar-height));
+      overflow-y: auto;
     }
     .sidebar h4 {
       color: #ffc107;
@@ -26,8 +27,9 @@
       background-color: #343a40;
     }
     .content {
-      margin-left: 270px;
+      margin-left: 220px;
       padding: 20px;
+      padding-bottom: 120px; /* prevent footer overlap */
     }
     .navbar-custom {
       background-color: #fff;
@@ -44,10 +46,13 @@
   </style>
 
   <!-- Sidebar -->
-  <div class="sidebar" style="margin-top: 70px">
-    <a href="#">Data Produk</a>
-    <a href="#">Data Transaksi</a>
-    <a href="#">Pengguna</a>
-    <a href="#">Laporan</a>
-    <a href="#">Logout</a>
-  </div>  
+  <div class="sidebar">
+    @php $base = route('admin.dashboard.index'); $tab = request('tab', 'products'); @endphp
+    <a href="{{ route('admin.dashboard.index', ['tab' => 'products']) }}" class="{{ $tab==='products' ? 'active' : '' }}">Data Produk</a>
+    <a href="{{ route('admin.dashboard.index', ['tab' => 'transactions']) }}" class="{{ $tab==='transactions' ? 'active' : '' }}">Data Transaksi</a>
+    <a href="{{ route('admin.dashboard.index', ['tab' => 'users']) }}" class="{{ $tab==='users' ? 'active' : '' }}">Pengguna</a>
+    <a href="{{ route('admin.dashboard.index', ['tab' => 'reports']) }}" class="{{ $tab==='reports' ? 'active' : '' }}">Laporan</a>
+
+    <form id="logout-form" method="POST" action="{{ route('logout') }}" style="display:none">@csrf</form>
+    <a href="#" onclick="event.preventDefault();document.getElementById('logout-form').submit();">Logout</a>
+  </div>

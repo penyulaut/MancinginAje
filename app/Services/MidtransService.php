@@ -6,6 +6,8 @@ use Midtrans\Config;
 use Midtrans\Snap;
 use Midtrans\CoreApi;
 use Midtrans\Transaction;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class MidtransService
 {
@@ -59,6 +61,18 @@ class MidtransService
             'item_details' => $itemDetails,
         ];
 
+        // Set Midtrans Snap expiry (5 minutes) using application timezone (Asia/Jakarta)
+        try {
+            $start = Carbon::now('Asia/Jakarta');
+            $payload['expiry'] = [
+                'start_time' => $start->format('Y-m-d H:i:s O'),
+                'unit' => 'minutes',
+                'duration' => 5,
+            ];
+        } catch (\Exception $e) {
+            // If Carbon fails for some reason, continue without expiry but log the error
+            Log::warning('Midtrans expiry not set: ' . $e->getMessage());
+        }
         try {
             $snapToken = Snap::getSnapToken($payload);
             return $snapToken;
@@ -159,7 +173,7 @@ class MidtransService
         try {
             $resp = $this->getTransactionStatus($txId);
         } catch (\Exception $e) {
-            \Log::error('Midtrans refresh error: ' . $e->getMessage(), ['order_id' => $order->id, 'tx' => $txId]);
+            Log::error('Midtrans refresh error: ' . $e->getMessage(), ['order_id' => $order->id, 'tx' => $txId]);
             return false;
         }
 
@@ -206,7 +220,7 @@ class MidtransService
         try {
             event(new \App\Events\OrderStatusUpdated($order->id, $order->status, $order->payment_status, $order->transaction_id));
         } catch (\Throwable $e) {
-            \Log::error('Broadcast error for refresh', ['error' => $e->getMessage(), 'order_id' => $order->id]);
+            Log::error('Broadcast error for refresh', ['error' => $e->getMessage(), 'order_id' => $order->id]);
         }
 
         return true;
@@ -222,8 +236,8 @@ class MidtransService
             $grossAmount = $notification->gross_amount ?? '';
 
             $expected = hash('sha512', $orderId . $statusCode . $grossAmount . $serverKey);
-            if (!hash_equals($expected, $notification->signature_key)) {
-                \Log::warning('Midtrans webhook signature mismatch', ['expected' => $expected, 'received' => $notification->signature_key, 'order_id' => $orderId]);
+                if (!hash_equals($expected, $notification->signature_key)) {
+                Log::warning('Midtrans webhook signature mismatch', ['expected' => $expected, 'received' => $notification->signature_key, 'order_id' => $orderId]);
                 return false;
             }
         }
@@ -270,7 +284,7 @@ class MidtransService
         try {
             event(new \App\Events\OrderStatusUpdated($order->id, $order->status, $order->payment_status, $order->transaction_id));
         } catch (\Throwable $e) {
-            \Log::error('Broadcast error for order update', ['error' => $e->getMessage(), 'order_id' => $order->id]);
+            Log::error('Broadcast error for order update', ['error' => $e->getMessage(), 'order_id' => $order->id]);
         }
 
         return true;

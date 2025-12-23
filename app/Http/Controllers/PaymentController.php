@@ -9,6 +9,7 @@ use App\Models\Order_items;
 use App\Models\Products;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Jobs\CancelOrderIfUnpaid;
 
 class PaymentController extends Controller
@@ -23,6 +24,13 @@ class PaymentController extends Controller
 
     public function index()
     {
+        // Admins are not allowed to make purchases
+        /** @var \App\Models\User|null $currentUser */
+        $currentUser = Auth::user();
+        if ($currentUser && ($currentUser->role ?? '') === 'admin') {
+            return redirect()->route('pages.beranda')->with('error', 'Admin tidak dapat melakukan pembelian.');
+        }
+
         $cart = session()->get('cart', []);
         if (empty($cart)) {
             return redirect()->route('cart.index')->with('error', 'Keranjang kosong');
@@ -46,6 +54,12 @@ class PaymentController extends Controller
 
     public function store(Request $request)
     {
+        /** @var \App\Models\User|null $currentUser */
+        $currentUser = Auth::user();
+        if ($currentUser && ($currentUser->role ?? '') === 'admin') {
+            return redirect()->route('pages.beranda')->with('error', 'Admin tidak dapat melakukan pembelian.');
+        }
+
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
             'customer_email' => 'required|email|max:255',
@@ -107,7 +121,7 @@ class PaymentController extends Controller
             try {
                 CancelOrderIfUnpaid::dispatch($order->id)->delay(now()->addMinutes(5));
             } catch (\Throwable $e) {
-                \Log::error('Failed to dispatch CancelOrderIfUnpaid job', ['error' => $e->getMessage(), 'order_id' => $order->id]);
+                Log::error('Failed to dispatch CancelOrderIfUnpaid job', ['error' => $e->getMessage(), 'order_id' => $order->id]);
             }
         } catch (\Exception $e) {
             DB::rollBack();
@@ -152,7 +166,7 @@ class PaymentController extends Controller
                     $this->midtrans->refreshOrderStatus($order);
                     $order->refresh();
                 } catch (\Throwable $e) {
-                    \Log::error('Error refreshing order status on finish', ['error' => $e->getMessage(), 'order_id' => $order->id]);
+                    Log::error('Error refreshing order status on finish', ['error' => $e->getMessage(), 'order_id' => $order->id]);
                 }
             }
         } else {

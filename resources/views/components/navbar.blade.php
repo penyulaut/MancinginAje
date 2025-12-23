@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-light fixed-top modern-navbar shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-light fixed-top modern-navbar shadow-sm" style="z-index:1050;">
   <div class="container-fluid px-4">
     <!-- Brand -->
     <a class="navbar-brand fw-bold fs-3" href="/beranda#">
@@ -49,7 +49,11 @@
           <a class="nav-link px-3" href="/beranda/orders"><i class="fas fa-shopping-bag me-1"></i> Produk</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link px-3" href="#contact"><i class="fas fa-envelope me-1"></i> Kontak</a>
+          @if(auth()->check() && auth()->user()->role === 'admin')
+            <a class="nav-link px-3" href="{{ route('admin.dashboard.index') }}"><i class="fas fa-tachometer-alt me-1"></i> Dashboard Admin</a>
+          @else
+            <a class="nav-link px-3" href="#contact"><i class="fas fa-envelope me-1"></i> Kontak</a>
+          @endif
         </li>
 
         <li class="nav-item ms-lg-3">
@@ -68,9 +72,20 @@
                 <li><a class="dropdown-item" href="{{ route('profile.show') }}">
                   <i class="fas fa-user-circle me-2 text-primary"></i>Profil Saya
                 </a></li>
-                <li><a class="dropdown-item" href="/beranda/yourorders">
-                  <i class="fas fa-box me-2 text-primary"></i>Pesanan Saya
-                </a></li>
+                @if(auth()->check() && auth()->user()->role === 'admin')
+                  <li><a class="dropdown-item" href="{{ route('admin.reports.index') }}">
+                    <i class="fas fa-file-alt me-2 text-primary"></i>Laporan Belanja
+                  </a></li>
+                @endif
+                @if(auth()->check() && auth()->user()->role === 'admin')
+                  <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}">
+                    <i class="fas fa-clipboard-list me-2 text-primary"></i>Daftar Pesanan
+                  </a></li>
+                @else
+                  <li><a class="dropdown-item" href="/beranda/yourorders">
+                    <i class="fas fa-box me-2 text-primary"></i>Pesanan Saya
+                  </a></li>
+                @endif
                 <li><hr class="dropdown-divider"></li>
                 <li>
                   <form action="{{ route('logout') }}" method="POST">

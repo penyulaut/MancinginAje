@@ -52,7 +52,7 @@
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            <a href="{{ route('login.show') }}">Sudah punya akun? Masuk</a>
+                            <a href="{{ route('login') }}">Sudah punya akun? Masuk</a>
                             <button class="btn btn-primary">Daftar</button>
                         </div>
                     </form>
@@ -163,7 +163,7 @@
                         <hr>
 
                         <p class="text-center text-muted mb-0">
-                            Sudah punya akun? <a href="{{ route('login.show') }}" class="text-warning fw-bold">Masuk di sini</a>
+                            Sudah punya akun? <a href="{{ route('login') }}" class="text-warning fw-bold">Masuk di sini</a>
                         </p>
                     </div>
                 </div>

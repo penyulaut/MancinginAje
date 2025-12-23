@@ -94,7 +94,7 @@
                             @auth
                                 <a href="{{ route('payment.index') }}" class="btn btn-warning w-100 mb-2">Lanjut ke Pembayaran</a>
                             @else
-                                <a href="{{ route('login.show') }}" class="btn btn-warning w-100 mb-2">Login untuk Checkout</a>
+                                <a href="{{ route('login') }}" class="btn btn-warning w-100 mb-2">Login untuk Checkout</a>
                             @endauth
                             
                             <a href="{{ route('pages.orders') }}" class="btn btn-outline-secondary w-100">Lanjut Belanja</a>

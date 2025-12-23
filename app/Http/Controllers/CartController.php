@@ -55,6 +55,11 @@ class CartController extends Controller
      */
     public function store(Request $request)
     {
+        // Admins cannot add products to cart / purchase
+        if ($request->user() && $request->user()->role === 'admin') {
+            return redirect()->route('pages.beranda')->with('error', 'Admin tidak dapat melakukan pembelian.');
+        }
+
         $validated = $request->validate([
             'id' => 'required|integer|exists:products,id',
             'quantity' => 'required|integer|min:1'

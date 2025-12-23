@@ -16,6 +16,29 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsSeller::class])->gro
     Route::delete('/beranda/dashboard/{id}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('dashboard.destroy');
 });
 
+// Admin dashboard (admin-only) - restock & add products via Imgur link
+Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsAdmin::class])->group(function() {
+    Route::get('/admin/dashboard', [App\Http\Controllers\DashboardController::class, 'indexAdmin'])->name('admin.dashboard.index');
+    Route::post('/admin/dashboard/{id}/restock', [App\Http\Controllers\DashboardController::class, 'restock'])->name('admin.dashboard.restock');
+
+    // Admin may also add products (uses same ProductController but accessible to admin)
+    Route::get('/admin/dashboard/create', [App\Http\Controllers\ProductController::class, 'create'])->name('admin.dashboard.create');
+    Route::post('/admin/dashboard', [App\Http\Controllers\ProductController::class, 'store'])->name('admin.dashboard.store');
+    Route::get('/admin/dashboard/{id}/edit', [App\Http\Controllers\ProductController::class, 'edit'])->name('admin.dashboard.edit');
+    Route::put('/admin/dashboard/{id}', [App\Http\Controllers\ProductController::class, 'update'])->name('admin.dashboard.update');
+    Route::delete('/admin/dashboard/{id}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('admin.dashboard.destroy');
+    // Admin reports
+    Route::get('/admin/reports', [App\Http\Controllers\DashboardController::class, 'reports'])->name('admin.reports.index');
+    // Admin manage all orders
+    Route::get('/admin/orders', [App\Http\Controllers\DashboardController::class, 'orders'])->name('admin.orders.index');
+    Route::post('/admin/orders/{id}/cancel', [App\Http\Controllers\DashboardController::class, 'cancelOrder'])->name('admin.orders.cancel');
+    Route::post('/admin/orders/{id}/accept', [App\Http\Controllers\DashboardController::class, 'acceptOrder'])->name('admin.orders.accept');
+    // Admin manage sellers (delete)
+    Route::delete('/admin/sellers/{id}', [App\Http\Controllers\DashboardController::class, 'destroySeller'])->name('admin.sellers.destroy');
+    // Admin delete any user (except self)
+    Route::delete('/admin/users/{id}', [App\Http\Controllers\DashboardController::class, 'destroyUser'])->name('admin.users.destroy');
+});
+
 // Products & Categories
 Route::get('/beranda/orders', [App\Http\Controllers\ProductController::class, 'index'])->name('pages.orders');
 Route::get('/api/search-suggestions', [App\Http\Controllers\ProductController::class, 'searchSuggestions'])->name('api.search.suggestions');
@@ -52,13 +75,13 @@ Route::get('/biteship/track/{awb}', [BiteshipController::class, 'track']);
 // Midtrans webhook (public) - called by Midtrans to notify transaction updates
 Route::post('/beranda/payment/notification', [App\Http\Controllers\MidtransWebhookController::class, 'handle'])
     ->name('payment.notification')
-    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
 // Authentication Routes
 Route::get('/register', [App\Http\Controllers\AuthController::class, 'showRegisterForm'])->name('register.show');
 Route::post('/register/submit', [App\Http\Controllers\AuthController::class, 'submitRegister'])->name('register.submit');
 
-Route::get('/login', [App\Http\Controllers\AuthController::class, 'showLoginForm'])->name('login.show');
+Route::get('/login', [App\Http\Controllers\AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [App\Http\Controllers\AuthController::class, 'submitLogin'])->name('login.submit');
 
 Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout'])->name('logout');

@@ -96,6 +96,10 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'laravel',
             'sslmode' => 'prefer',
+            'options' => extension_loaded('pdo_pgsql') ? [
+                // Emulate prepares to avoid server-side prepared statement issues (pgbouncer/stateless proxies)
+                PDO::ATTR_EMULATE_PREPARES => true,
+            ] : [],
         ],
 
         'sqlsrv' => [

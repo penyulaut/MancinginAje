@@ -1,7 +1,7 @@
 @extends('layouts.main')
 
 @section('content')
-    <x-navbar/>
+    
     <div class="container">
         <div class=" search-bar card shadow-lg border-0">
             <div class="card-header bg-warning text-dark text-center">

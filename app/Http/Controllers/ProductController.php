@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Products;
 use App\Models\Category;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
@@ -138,22 +139,37 @@ class ProductController extends Controller
             'harga' => 'required|numeric',
             'stok' => 'required|integer',
             'gambar' => 'nullable|image|max:2048',
+            'gambar_link' => ['nullable','url'],
             'category_id' => 'required|exists:categories,id',
         ]);
 
-        if ($request->hasFile('gambar')) {
+        // If user provided an Imgur link, prefer that as the image
+        if (!empty($validated['gambar_link'])) {
+            // basic Imgur URL check
+            if (preg_match('/^https?:\\/\\/(i\\.)?imgur\\.com\\/.+/i', $validated['gambar_link'])) {
+                $validated['gambar'] = $validated['gambar_link'];
+            } else {
+                return back()->with('error', 'Link gambar harus berasal dari Imgur.');
+            }
+        } elseif ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
             $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('images', $filename, 'public');
             $validated['gambar'] = 'storage/' . $path;
         }
 
-        // set seller ownership
-        if ($request->user()) {
-            $validated['seller_id'] = $request->user()->id;
+        // set seller ownership: if seller -> their id, if admin -> null
+        /** @var \App\Models\User|null $currentUser */
+        $currentUser = Auth::user();
+        if ($currentUser) {
+            $validated['seller_id'] = $currentUser->role === 'seller' ? $currentUser->id : null;
         }
 
         Products::create($validated);
+
+        if ($currentUser && $currentUser->role === 'admin') {
+            return redirect()->route('admin.dashboard.index')->with('success', 'Produk berhasil ditambahkan.');
+        }
 
         return redirect()->route('dashboard.index')->with('success', 'Produk berhasil ditambahkan.');
     }
@@ -172,8 +188,18 @@ class ProductController extends Controller
      */
     public function edit(string $id)
     {
-        $products = Products::where('seller_id', auth()->id())->get();
-        $productsDetail = Products::where('seller_id', auth()->id())->findOrFail($id);
+        // Sellers can only edit their own products; admin can edit any
+        /** @var \App\Models\User|null $currentUser */
+        $currentUser = Auth::user();
+
+        if ($currentUser && $currentUser->role === 'admin') {
+            $products = Products::all();
+            $productsDetail = Products::findOrFail($id);
+        } else {
+            $products = Products::where('seller_id', $currentUser?->id)->get();
+            $productsDetail = Products::where('seller_id', $currentUser?->id)->findOrFail($id);
+        }
+
         return view('dashboard.create', compact('products', 'productsDetail'));
     }
 
@@ -188,10 +214,17 @@ class ProductController extends Controller
             'harga' => 'required|numeric',
             'stok' => 'required|integer',
             'gambar' => 'nullable|image|max:2048',
+            'gambar_link' => ['nullable','url'],
             'category_id' => 'required|exists:categories,id',
         ]);
 
-        if ($request->hasFile('gambar')) {
+        if (!empty($validated['gambar_link'])) {
+            if (preg_match('/^https?:\\/\\/(i\\.)?imgur\\.com\\/.+/i', $validated['gambar_link'])) {
+                $validated['gambar'] = $validated['gambar_link'];
+            } else {
+                return back()->with('error', 'Link gambar harus berasal dari Imgur.');
+            }
+        } elseif ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
             $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('images', $filename, 'public');
@@ -199,12 +232,20 @@ class ProductController extends Controller
         }
 
         $product = Products::findOrFail($id);
-        if ($product->seller_id != auth()->id()) {
+        /** @var \App\Models\User|null $currentUser */
+        $currentUser = Auth::user();
+        if (!( $currentUser && $currentUser->role === 'admin') && $product->seller_id != ($currentUser?->id)) {
+            if ($currentUser && $currentUser->role === 'admin') {
+                return redirect()->route('admin.dashboard.index')->with('error', 'Akses ditolak: bukan pemilik produk.');
+            }
             return redirect()->route('dashboard.index')->with('error', 'Akses ditolak: bukan pemilik produk.');
         }
 
         $product->update($validated);
 
+        if ($currentUser && $currentUser->role === 'admin') {
+            return redirect()->route('admin.dashboard.index')->with('success', 'Produk berhasil diperbaharui.');
+        }
         return redirect()->route('dashboard.index')->with('success', 'Produk berhasil diperbaharui.');
     }
 
@@ -215,7 +256,12 @@ class ProductController extends Controller
     {
         $product = Products::findOrFail($id);
 
-        if ($product->seller_id != auth()->id()) {
+        /** @var \App\Models\User|null $currentUser */
+        $currentUser = Auth::user();
+        if (!( $currentUser && $currentUser->role === 'admin') && $product->seller_id != ($currentUser?->id)) {
+            if ($currentUser && $currentUser->role === 'admin') {
+                return redirect()->route('admin.dashboard.index')->with('error', 'Akses ditolak: bukan pemilik produk.');
+            }
             return redirect()->route('dashboard.index')->with('error', 'Akses ditolak: bukan pemilik produk.');
         }
 
@@ -233,6 +279,9 @@ class ProductController extends Controller
 
         $product->delete();
 
+        if ($currentUser && $currentUser->role === 'admin') {
+            return redirect()->route('admin.dashboard.index')->with('success', 'Produk berhasil dihapus.');
+        }
         return redirect()->route('dashboard.index')->with('success', 'Produk berhasil dihapus.');
     }
     
