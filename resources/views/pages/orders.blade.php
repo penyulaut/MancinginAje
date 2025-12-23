@@ -79,14 +79,9 @@
                 <div class="row g-4">
                     @forelse($products as $item)            
                         <div class="col-lg-3 col-md-4 col-sm-6">
-                            <div class="product-card-modern h-100">
+                            <div class="product-card-modern h-100" style="position:relative;">
                                 <div class="product-image-wrapper">
                                     <img src="{{ asset($item->gambar) }}" class="product-image" alt="{{ $item->nama }}" loading="lazy">
-                                    <div class="product-overlay">
-                                        <a href="{{ route('products.show', $item->id) }}" class="btn btn-light btn-sm rounded-pill px-4">
-                                            <i class="fas fa-eye me-2"></i>Detail
-                                        </a>
-                                    </div>
                                     @if($item->stok < 10 && $item->stok > 0)
                                         <span class="badge bg-warning position-absolute top-0 end-0 m-2">
                                             <i class="fas fa-exclamation-triangle me-1"></i>Stok Terbatas
@@ -99,6 +94,7 @@
                                 </div>
                                 <div class="product-body p-3">
                                     <h5 class="product-title fw-bold mb-2">{{ $item->nama }}</h5>
+                                    <a href="{{ route('products.show', $item->id) }}" class="stretched-link" aria-label="Lihat detail {{ $item->nama }}"></a>
                                     <p class="product-description text-muted small mb-3">{{ Str::limit($item->deskripsi, 60) }}</p>
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="product-price fw-bold text-primary fs-5">Rp {{ number_format($item->harga, 0, ',', '.') }}</span>

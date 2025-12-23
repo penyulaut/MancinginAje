@@ -3,7 +3,8 @@
 @section('content')
   <x-sidebar/>
 
-  <div class="container mt-5 pt-4">
+  <div class="content">
+    <div class="container mt-5 pt-4">
     <h3>Laporan Belanja</h3>
 
     <form method="GET" class="row g-3 my-3">
@@ -77,6 +78,7 @@
           @endif
         </tbody>
       </table>
+    </div>
     </div>
   </div>
 

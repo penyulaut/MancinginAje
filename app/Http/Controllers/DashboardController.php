@@ -78,7 +78,8 @@ class DashboardController extends Controller
 
         // Transaction status breakdown
         $transactionsPending = Orders::where('status', 'pending')->count();
-        $transactionsPaid = Orders::where('status', 'paid')->count();
+        // Count completed orders as paid revenue
+        $transactionsPaid = Orders::where('status', 'completed')->count();
         $transactionsCancelled = Orders::where('status', 'cancelled')->orWhere('status', 'failed')->count();
 
         // Users and revenue
@@ -212,7 +213,7 @@ class DashboardController extends Controller
         }
 
         $order = Orders::with('items')->findOrFail($id);
-        if ($order->status === 'paid') {
+        if ($order->status === 'completed') {
             return back()->with('error', 'Pesanan sudah dibayar, tidak dapat dibatalkan.');
         }
 
@@ -242,11 +243,13 @@ class DashboardController extends Controller
         }
 
         $order = Orders::findOrFail($id);
-        if ($order->status === 'paid') {
+        if ($order->status === 'completed') {
             return back()->with('info', 'Pesanan sudah berstatus dibayar.');
         }
 
-        $order->status = 'paid';
+        // Accept order: mark as paid/completed
+        $order->status = 'completed';
+        $order->payment_status = 'paid';
         $order->save();
 
         return back()->with('success', 'Pesanan disetujui (auto-acc).');

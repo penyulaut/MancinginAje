@@ -45,9 +45,15 @@
         </div>
     </div>
 
+    <!-- Payment status card removed per request -->
+
     <div class="d-flex justify-content-between">
         <a href="{{ route('pages.beranda') }}" class="btn btn-secondary">Kembali ke Beranda</a>
         <a href="{{ route('payment.finish') }}?order_id={{ $order->id }}" class="btn btn-success">Selesai / Cek Status</a>
     </div>
 </div>
+
+@section('scripts')
+<!-- Payment status polling removed per user request -->
+@endsection
 @endsection

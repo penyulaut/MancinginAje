@@ -200,7 +200,8 @@ class ProductController extends Controller
             $productsDetail = Products::where('seller_id', $currentUser?->id)->findOrFail($id);
         }
 
-        return view('dashboard.create', compact('products', 'productsDetail'));
+        $categories = Category::all();
+        return view('dashboard.create', compact('products', 'productsDetail', 'categories'));
     }
 
     /**

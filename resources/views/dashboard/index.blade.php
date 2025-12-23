@@ -7,8 +7,7 @@
   <div class="search-bar px-5" style="margin-left: 220px; padding-bottom: 120px; min-height: calc(100vh - 120px);">
     <nav class="navbar p-2 m-2">
       <span class="navbar-brand fw-bold text-light">Dashboard Admin</span>
-      @php $createRoute = (auth()->user() && auth()->user()->role === 'admin') ? route('admin.dashboard.create') : route('dashboard.create'); @endphp
-      <a href="{{ $createRoute }}" class="btn btn-warning">Tambah data</a>
+      {{-- Tambah data dipindahkan ke tab Data Produk --}}
     </nav>
 
     {{-- Summary cards --}}
@@ -63,48 +62,17 @@
 
     @php $activeTab = $activeTab ?? request('tab', 'products'); @endphp
 
-    {{-- Transaction status quick summary & Quick report form --}}
-    <div class="row g-3 mt-3">
-      <div class="col-md-6">
-        <div class="card p-3">
-          <h6>Status Transaksi</h6>
-          <div class="d-flex gap-3 mt-2">
-            <div class="badge bg-secondary p-2">Pending: {{ $transactionsPending ?? 0 }}</div>
-            <div class="badge bg-success p-2">Paid: {{ $transactionsPaid ?? 0 }}</div>
-            <div class="badge bg-danger p-2">Cancelled: {{ $transactionsCancelled ?? 0 }}</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-6">
-        <div class="card p-3">
-          <h6>Laporan Cepat</h6>
-          <form method="GET" action="{{ route('admin.reports.index') }}" class="row g-2 align-items-end">
-            <div class="col-5">
-              <label class="form-label">Tanggal</label>
-              <input type="date" name="date" class="form-control" value="{{ request('date') }}">
-            </div>
-            <div class="col-4">
-              <label class="form-label">Periode</label>
-              <select name="period" class="form-select">
-                <option value="monthly" {{ request('period')=='monthly' ? 'selected' : '' }}>Bulanan</option>
-                <option value="daily" {{ request('period')=='daily' ? 'selected' : '' }}>Harian</option>
-                <option value="yearly" {{ request('period')=='yearly' ? 'selected' : '' }}>Tahunan</option>
-              </select>
-            </div>
-            <div class="col-3">
-              <button class="btn btn-primary w-100">Lihat</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    {{-- (Status Transaksi moved to Transactions tab) --}}
 
     {{-- Tabbed Content: Products / Transactions / Users / Reports --}}
 
     @if($activeTab === 'products')
       <div class="table-container">
-        <h5 class="mb-3">Data Produk</h5>
+        @php $createRoute = (auth()->user() && auth()->user()->role === 'admin') ? route('admin.dashboard.create') : route('dashboard.create'); @endphp
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">Data Produk</h5>
+          <a href="{{ $createRoute }}" class="btn btn-warning">Tambah data</a>
+        </div>
 
         @if (session('success'))
           <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -181,7 +149,14 @@
     @elseif($activeTab === 'transactions')
       <div class="card mt-4">
         <div class="card-body">
-          <h5>Data Transaksi</h5>
+          <div class="mb-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Data Transaksi</h5>
+            <div class="d-flex gap-2">
+              <div class="badge bg-secondary p-2">Pending: {{ $transactionsPending ?? 0 }}</div>
+              <div class="badge bg-success p-2">Paid: {{ $transactionsPaid ?? 0 }}</div>
+              <div class="badge bg-danger p-2">Cancelled: {{ $transactionsCancelled ?? 0 }}</div>
+            </div>
+          </div>
           <form method="GET" class="row g-2 mb-3">
             <input type="hidden" name="tab" value="transactions">
             <div class="col-md-3">
@@ -342,41 +317,5 @@
 
     @endif
 
-    {{-- Recent transactions --}}
-    <div class="card mt-4">
-      <div class="card-body">
-        <h5>Transaksi Terbaru</h5>
-        @if(isset($recentTransactions) && $recentTransactions->isNotEmpty())
-          <div class="table-responsive">
-            <table class="table table-sm table-striped">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Order</th>
-                  <th>Tanggal</th>
-                  <th>Pelanggan</th>
-                  <th>Total</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                @foreach($recentTransactions as $ord)
-                  <tr>
-                    <td>{{ $loop->iteration }}</td>
-                    <td>{{ $ord->id }}</td>
-                    <td>{{ $ord->created_at->format('Y-m-d H:i') }}</td>
-                    <td>{{ $ord->customer_name ?? optional($ord->user)->name ?? '-' }}</td>
-                    <td>Rp {{ number_format($ord->total_harga,0,',','.') }}</td>
-                    <td>{{ ucfirst($ord->payment_status ?? $ord->status) }}</td>
-                  </tr>
-                @endforeach
-              </tbody>
-            </table>
-          </div>
-        @else
-          <p class="mb-0">Belum ada transaksi.</p>
-        @endif
-      </div>
-    </div>
   </div>
 @endsection

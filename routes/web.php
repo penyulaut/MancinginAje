@@ -62,6 +62,9 @@ Route::post('/biteship/quote', [BiteshipController::class, 'quote']);
 Route::post('/biteship/create-shipment', [BiteshipController::class, 'createShipment']);
 Route::get('/biteship/track/{awb}', [BiteshipController::class, 'track']);
     Route::get('/beranda/payment/success', [App\Http\Controllers\PaymentController::class, 'finish'])->name('payment.finish');
+    // API for polling order status (used by client when waiting for webhook)
+    Route::get('/beranda/api/order-status/{id}', [App\Http\Controllers\PaymentController::class, 'orderStatus'])->name('payment.status');
+    Route::post('/beranda/api/order-clear/{id}', [App\Http\Controllers\PaymentController::class, 'clearCartIfPaid'])->name('payment.clear');
     Route::get('/beranda/yourorders', [App\Http\Controllers\OrderController::class, 'showorders'])->name('pages.yourorders');
     Route::post('/beranda/yourorders/{id}/cancel', [App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
     

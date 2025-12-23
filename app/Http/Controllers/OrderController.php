@@ -79,13 +79,9 @@ class OrderController extends Controller
             return ($o->payment_status === null || $o->payment_status === 'pending' || $o->payment_status === 'expired' || $o->payment_status === 'failed') && $o->status === 'pending';
         });
 
-        $ordersRunning = $ordersAll->filter(function($o) {
-            // 'pesanan berjalan' = paid but not completed
-            return $o->status === 'paid' && ($o->payment_status === 'paid');
-        });
-
+        // Consider an order completed when its status is 'completed' OR payment_status is 'paid'
         $ordersCompleted = $ordersAll->filter(function($o) {
-            return $o->status === 'completed';
+            return $o->status === 'completed' || ($o->payment_status !== null && $o->payment_status === 'paid');
         });
 
         $ordersCancelled = $ordersAll->filter(function($o) {
@@ -95,7 +91,6 @@ class OrderController extends Controller
         return view('pages.YourOrders', [
             'ordersAll' => $ordersAll,
             'ordersUnpaid' => $ordersUnpaid,
-            'ordersRunning' => $ordersRunning,
             'ordersCompleted' => $ordersCompleted,
             'ordersCancelled' => $ordersCancelled,
         ]);

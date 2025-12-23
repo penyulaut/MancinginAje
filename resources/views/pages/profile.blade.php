@@ -19,9 +19,6 @@
               <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-address" data-bs-toggle="tab" data-bs-target="#address" type="button">Alamat</button>
               </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-history" data-bs-toggle="tab" data-bs-target="#history" type="button">Riwayat Belanja</button>
-              </li>
             </ul>
 
             <div class="tab-content">

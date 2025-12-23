@@ -66,7 +66,7 @@
           @auth
             <div class="dropdown">
               <button class="btn btn-primary dropdown-toggle rounded-pill px-3" type="button" data-bs-toggle="dropdown">
-                <i class="fa-regular fa-user me-1"></i>{{ session('user_name') }}
+                <i class="fa-regular fa-user me-1"></i>{{ auth()->user()->name ?? auth()->user()->email ?? 'Pengguna' }}
               </button>
               <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2">
                 <li><a class="dropdown-item" href="{{ route('profile.show') }}">

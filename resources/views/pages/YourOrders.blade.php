@@ -10,13 +10,10 @@
 
     {{-- Tabs/navbar --}}
     @php
-        $tab = request('tab', 'running');
+        $tab = request('tab', 'unpaid');
     @endphp
 
     <ul class="nav nav-tabs mb-4">
-        <li class="nav-item">
-            <a class="nav-link {{ $tab === 'running' ? 'active' : '' }}" href="{{ route('pages.yourorders', ['tab' => 'running']) }}">Pesanan Berjalan <span class="badge bg-light text-dark">{{ $ordersRunning->count() }}</span></a>
-        </li>
         <li class="nav-item">
             <a class="nav-link {{ $tab === 'unpaid' ? 'active' : '' }}" href="{{ route('pages.yourorders', ['tab' => 'unpaid']) }}">Belum Dibayar <span class="badge bg-light text-dark">{{ $ordersUnpaid->count() }}</span></a>
         </li>
@@ -38,9 +35,6 @@
         } elseif ($tab === 'cancelled') {
             $list = $ordersCancelled;
             $emptyMessage = 'Tidak ada pesanan batal.';
-        } else {
-            $list = $ordersRunning;
-            $emptyMessage = 'Tidak ada pesanan berjalan saat ini.';
         }
     @endphp
 
@@ -72,9 +66,9 @@
                             </span>
                             <span class="badge 
                                 @if($order->status == 'pending') bg-secondary
-                                @elseif($order->status == 'paid') bg-info
                                 @elseif($order->status == 'completed') bg-success
-                                @else bg-danger @endif">
+                                @elseif(in_array($order->status, ['cancelled','failed'])) bg-danger
+                                @else bg-info @endif">
                                 {{ ucfirst($order->status ?? '-') }}
                             </span>
                         </div>

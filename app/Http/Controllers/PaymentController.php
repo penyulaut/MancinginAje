@@ -173,8 +173,14 @@ class PaymentController extends Controller
             $order = null;
         }
 
-        session()->forget('cart');
-        return view('pages.payment-success', compact('order'));
+        // Only clear cart and show success when payment_status is paid.
+        if ($order && $order->payment_status === 'paid') {
+            session()->forget('cart');
+            return view('pages.payment-success', compact('order'));
+        }
+
+        // If not paid yet, redirect to payment instructions / pending page
+        return redirect()->route('pages.yourorders')->with('info', 'Pembayaran belum terkonfirmasi. Menunggu notifikasi dari Midtrans.');
     }
 
     /**
@@ -218,6 +224,76 @@ class PaymentController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('pages.yourorders')->with('error', 'Midtrans error: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Return order status JSON for polling.
+     */
+    public function orderStatus(Request $request, $id)
+    {
+        $order = Orders::with('items.product')->find($id);
+        if (!$order) {
+            return response()->json(['error' => 'Order tidak ditemukan'], 404);
+        }
+
+        // Only owner or admin may poll
+        $user = $request->user();
+        if (!$user || ($order->user_id !== $user->id && ($user->role ?? '') !== 'admin')) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Attempt to refresh status from Midtrans to provide up-to-date info
+        try {
+            $this->midtrans->refreshOrderStatus($order);
+            // reload model after potential update
+            $order->refresh();
+        } catch (\Throwable $e) {
+            // don't fail the poll entirely; log and return existing state
+            Log::warning('Failed to refresh order status during poll', ['error' => $e->getMessage(), 'order_id' => $order->id]);
+        }
+
+        return response()->json([
+            'id' => $order->id,
+            'status' => $order->status,
+            'payment_status' => $order->payment_status,
+            'transaction_id' => $order->transaction_id,
+        ]);
+    }
+
+    /**
+     * Clear the user's cart server-side if order is confirmed paid.
+     * Returns JSON { cleared: bool, payment_status: string }
+     */
+    public function clearCartIfPaid(Request $request, $id)
+    {
+        $order = Orders::with('items.product')->find($id);
+        if (!$order) {
+            return response()->json(['error' => 'Order tidak ditemukan'], 404);
+        }
+
+        $user = $request->user();
+        if (!$user || ($order->user_id !== $user->id && ($user->role ?? '') !== 'admin')) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $this->midtrans->refreshOrderStatus($order);
+            $order->refresh();
+        } catch (\Throwable $e) {
+            Log::warning('Failed to refresh order status during clearCartIfPaid', ['error' => $e->getMessage(), 'order_id' => $order->id]);
+        }
+
+        if ($order->payment_status === 'paid') {
+            // clear cart for this session
+            try {
+                session()->forget('cart');
+            } catch (\Throwable $e) {
+                Log::warning('Failed to clear cart after payment', ['error' => $e->getMessage()]);
+            }
+            return response()->json(['cleared' => true, 'payment_status' => $order->payment_status]);
+        }
+
+        return response()->json(['cleared' => false, 'payment_status' => $order->payment_status]);
     }
 
     public function notification(Request $request)

@@ -13,6 +13,18 @@ class ProductSeederSample extends Seeder
      */
     public function run(): void
     {
+        // Ensure categories exist (strict list)
+        $categories = ['Joran','Reel','Kail','Umpan','Pakaian','Aksesoris'];
+        foreach ($categories as $c) {
+            DB::table('categories')->updateOrInsert(
+                ['nama' => $c],
+                ['updated_at' => now(), 'created_at' => now()]
+            );
+        }
+
+        // Build category map to associate products reliably
+        $categoryMap = DB::table('categories')->pluck('id', 'nama')->toArray();
+
         DB::table('products')->insert([
             // Joran (Category ID 1)
             [
@@ -21,7 +33,7 @@ class ProductSeederSample extends Seeder
                 'harga' => 250000,
                 'stok' => 15,
                 'gambar' => 'https://via.placeholder.com/300x300?text=Joran+6ft',
-                'category_id' => 1,
+                'category_id' => $categoryMap['Joran'] ?? 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -31,7 +43,7 @@ class ProductSeederSample extends Seeder
                 'harga' => 450000,
                 'stok' => 8,
                 'gambar' => 'https://via.placeholder.com/300x300?text=Joran+7ft',
-                'category_id' => 1,
+                'category_id' => $categoryMap['Joran'] ?? 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -43,7 +55,7 @@ class ProductSeederSample extends Seeder
                 'harga' => 150000,
                 'stok' => 20,
                 'gambar' => 'https://via.placeholder.com/300x300?text=Reel+Manual',
-                'category_id' => 2,
+                'category_id' => $categoryMap['Reel'] ?? 2,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -53,7 +65,7 @@ class ProductSeederSample extends Seeder
                 'harga' => 850000,
                 'stok' => 5,
                 'gambar' => 'https://via.placeholder.com/300x300?text=Reel+Elektrik',
-                'category_id' => 2,
+                'category_id' => $categoryMap['Reel'] ?? 2,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -65,7 +77,7 @@ class ProductSeederSample extends Seeder
                 'harga' => 45000,
                 'stok' => 50,
                 'gambar' => 'https://via.placeholder.com/300x300?text=Kail+Size+1',
-                'category_id' => 3,
+                'category_id' => $categoryMap['Kail'] ?? 3,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -75,7 +87,7 @@ class ProductSeederSample extends Seeder
                 'harga' => 55000,
                 'stok' => 40,
                 'gambar' => 'https://via.placeholder.com/300x300?text=Kail+Size+3',
-                'category_id' => 3,
+                'category_id' => $categoryMap['Kail'] ?? 3,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -87,7 +99,7 @@ class ProductSeederSample extends Seeder
                 'harga' => 35000,
                 'stok' => 30,
                 'gambar' => 'https://via.placeholder.com/300x300?text=Umpan+Shrimp',
-                'category_id' => 4,
+                'category_id' => $categoryMap['Umpan'] ?? 4,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -97,7 +109,7 @@ class ProductSeederSample extends Seeder
                 'harga' => 80000,
                 'stok' => 25,
                 'gambar' => 'https://via.placeholder.com/300x300?text=Pelet+Umpan',
-                'category_id' => 4,
+                'category_id' => $categoryMap['Umpan'] ?? 4,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -109,7 +121,7 @@ class ProductSeederSample extends Seeder
                 'harga' => 350000,
                 'stok' => 12,
                 'gambar' => 'https://via.placeholder.com/300x300?text=Jaket+Pemancing',
-                'category_id' => 5,
+                'category_id' => $categoryMap['Pakaian'] ?? 5,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -119,7 +131,7 @@ class ProductSeederSample extends Seeder
                 'harga' => 250000,
                 'stok' => 18,
                 'gambar' => 'https://via.placeholder.com/300x300?text=Rompi+Pelampung',
-                'category_id' => 5,
+                'category_id' => $categoryMap['Pakaian'] ?? 5,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -131,7 +143,7 @@ class ProductSeederSample extends Seeder
                 'harga' => 180000,
                 'stok' => 22,
                 'gambar' => 'https://via.placeholder.com/300x300?text=Tas+Pancing',
-                'category_id' => 6,
+                'category_id' => $categoryMap['Aksesoris'] ?? 6,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -141,7 +153,7 @@ class ProductSeederSample extends Seeder
                 'harga' => 95000,
                 'stok' => 35,
                 'gambar' => 'https://via.placeholder.com/300x300?text=Headlamp+LED',
-                'category_id' => 6,
+                'category_id' => $categoryMap['Aksesoris'] ?? 6,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

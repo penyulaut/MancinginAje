@@ -16,8 +16,6 @@ class MidtransService
         Config::$serverKey = config('midtrans.server_key');
         Config::$clientKey = config('midtrans.client_key');
 
-        // Determine production flag.
-        // Priority: explicit `mode` ('production'|'sandbox') -> `is_production` boolean
         $mode = config('midtrans.mode');
         if ($mode === 'production') {
             $isProduction = true;
@@ -61,7 +59,6 @@ class MidtransService
             'item_details' => $itemDetails,
         ];
 
-        // Set Midtrans Snap expiry (5 minutes) using application timezone (Asia/Jakarta)
         try {
             $start = Carbon::now('Asia/Jakarta');
             $payload['expiry'] = [
@@ -69,22 +66,18 @@ class MidtransService
                 'unit' => 'minutes',
                 'duration' => 5,
             ];
-        } catch (\Exception $e) {
-            // If Carbon fails for some reason, continue without expiry but log the error
+        } catch (\Throwable $e) {
             Log::warning('Midtrans expiry not set: ' . $e->getMessage());
         }
+
         try {
             $snapToken = Snap::getSnapToken($payload);
             return $snapToken;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new \Exception('Midtrans Error: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Create a core-api charge for offline channels (VA / cstore / qris)
-     * Returns the Midtrans response object from Transaction::charge
-     */
     public function createCharge($order, $method)
     {
         $transactionDetails = [
@@ -114,7 +107,6 @@ class MidtransService
             'item_details' => $itemDetails,
         ];
 
-        // map selected method to core-api params
         if (str_starts_with($method, 'bank_transfer_')) {
             $bank = str_replace('bank_transfer_', '', $method);
             $params['payment_type'] = 'bank_transfer';
@@ -131,11 +123,10 @@ class MidtransService
         } elseif ($method === 'qris') {
             $params['payment_type'] = 'qris';
         } else {
-            // Fallback to snap token for other methods (credit card, ewallet)
             try {
                 $snapToken = Snap::getSnapToken($params);
                 return (object) ['snap_token' => $snapToken];
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 throw new \Exception('Midtrans Snap Error: ' . $e->getMessage());
             }
         }
@@ -143,7 +134,7 @@ class MidtransService
         try {
             $response = CoreApi::charge($params);
             return $response;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new \Exception('Midtrans Charge Error: ' . $e->getMessage());
         }
     }
@@ -151,65 +142,51 @@ class MidtransService
     public function getTransactionStatus($transactionId)
     {
         try {
-            $status = Transaction::status($transactionId);
-            return $status;
-        } catch (\Exception $e) {
+            return Transaction::status($transactionId);
+        } catch (\Throwable $e) {
             throw new \Exception('Midtrans Error: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Refresh order status by querying Midtrans transaction status and applying same mapping
-     * used for notifications. Returns true if updated, false otherwise.
-     */
     public function refreshOrderStatus($order)
     {
-        // Determine transaction identifier to query
         $txId = $order->transaction_id ?? $order->snap_token ?? null;
-        if (empty($txId)) {
-            return false;
-        }
+        if (empty($txId)) return false;
 
         try {
             $resp = $this->getTransactionStatus($txId);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Midtrans refresh error: ' . $e->getMessage(), ['order_id' => $order->id, 'tx' => $txId]);
             return false;
         }
 
-        // $resp may be an object or array; normalize to object
         $notification = is_array($resp) ? (object) $resp : $resp;
-
-        // Some responses contain 'order_id' in format "{orderId}-{timestamp}" similar to notifications
         $transactionStatus = $notification->transaction_status ?? ($notification->status ?? null);
         $fraudStatus = $notification->fraud_status ?? null;
 
-        if (!$transactionStatus) {
-            return false;
-        }
+        if (!$transactionStatus) return false;
 
-        // Apply same mappings as handleNotification
-        if ($transactionStatus == 'capture') {
-            if ($fraudStatus == 'challenge') {
+        if ($transactionStatus === 'capture') {
+            if ($fraudStatus === 'challenge') {
                 $order->payment_status = 'pending';
                 $order->status = 'pending';
-            } else if ($fraudStatus == 'accept') {
+            } else {
                 $order->payment_status = 'paid';
-                $order->status = 'paid';
+                $order->status = 'completed';
             }
-        } else if ($transactionStatus == 'settlement') {
+        } elseif ($transactionStatus === 'settlement') {
             $order->payment_status = 'paid';
-            $order->status = 'paid';
-        } else if ($transactionStatus == 'pending') {
+            $order->status = 'completed';
+        } elseif ($transactionStatus === 'pending') {
             $order->payment_status = 'pending';
             $order->status = 'pending';
-        } else if ($transactionStatus == 'deny') {
+        } elseif ($transactionStatus === 'deny') {
             $order->payment_status = 'failed';
             $order->status = 'cancelled';
-        } else if ($transactionStatus == 'expire') {
+        } elseif ($transactionStatus === 'expire') {
             $order->payment_status = 'expired';
             $order->status = 'cancelled';
-        } else if ($transactionStatus == 'cancel') {
+        } elseif ($transactionStatus === 'cancel') {
             $order->payment_status = 'failed';
             $order->status = 'cancelled';
         }
@@ -228,7 +205,6 @@ class MidtransService
 
     public function handleNotification($notification)
     {
-        // If Midtrans provided a signature_key, validate it to ensure the webhook is authentic.
         if (is_object($notification) && property_exists($notification, 'signature_key')) {
             $serverKey = config('midtrans.server_key');
             $orderId = $notification->order_id ?? '';
@@ -236,51 +212,49 @@ class MidtransService
             $grossAmount = $notification->gross_amount ?? '';
 
             $expected = hash('sha512', $orderId . $statusCode . $grossAmount . $serverKey);
-                if (!hash_equals($expected, $notification->signature_key)) {
+            if (!hash_equals($expected, $notification->signature_key)) {
                 Log::warning('Midtrans webhook signature mismatch', ['expected' => $expected, 'received' => $notification->signature_key, 'order_id' => $orderId]);
                 return false;
             }
         }
 
-        $orderId = explode('-', $notification->order_id)[0];
+        $orderId = explode('-', $notification->order_id)[0] ?? null;
+        if (!$orderId) return false;
+
         $order = \App\Models\Orders::find($orderId);
+        if (!$order) return false;
 
-        if (!$order) {
-            return false;
-        }
+        $transactionStatus = $notification->transaction_status ?? null;
+        $fraudStatus = $notification->fraud_status ?? null;
 
-        $transactionStatus = $notification->transaction_status;
-        $fraudStatus = $notification->fraud_status;
-
-        if ($transactionStatus == 'capture') {
-            if ($fraudStatus == 'challenge') {
+        if ($transactionStatus === 'capture') {
+            if ($fraudStatus === 'challenge') {
                 $order->payment_status = 'pending';
                 $order->status = 'pending';
-            } else if ($fraudStatus == 'accept') {
+            } else {
                 $order->payment_status = 'paid';
-                $order->status = 'paid';
+                $order->status = 'completed';
             }
-        } else if ($transactionStatus == 'settlement') {
+        } elseif ($transactionStatus === 'settlement') {
             $order->payment_status = 'paid';
-            $order->status = 'paid';
-        } else if ($transactionStatus == 'pending') {
+            $order->status = 'completed';
+        } elseif ($transactionStatus === 'pending') {
             $order->payment_status = 'pending';
             $order->status = 'pending';
-        } else if ($transactionStatus == 'deny') {
+        } elseif ($transactionStatus === 'deny') {
             $order->payment_status = 'failed';
             $order->status = 'cancelled';
-        } else if ($transactionStatus == 'expire') {
+        } elseif ($transactionStatus === 'expire') {
             $order->payment_status = 'expired';
             $order->status = 'cancelled';
-        } else if ($transactionStatus == 'cancel') {
+        } elseif ($transactionStatus === 'cancel') {
             $order->payment_status = 'failed';
             $order->status = 'cancelled';
         }
 
-        $order->transaction_id = $notification->transaction_id;
+        $order->transaction_id = $notification->transaction_id ?? $order->transaction_id;
         $order->save();
 
-        // Broadcast order update so frontend can react in real-time.
         try {
             event(new \App\Events\OrderStatusUpdated($order->id, $order->status, $order->payment_status, $order->transaction_id));
         } catch (\Throwable $e) {

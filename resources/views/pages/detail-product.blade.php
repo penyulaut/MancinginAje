@@ -50,7 +50,7 @@
                             
                             <div class="mb-3">
                                 <label for="quantity" class="form-label">Jumlah Pesanan</label>
-                                <div class="input-group" style="width: 150px;">
+                                <div class="input-group" style="width: 220px;">
                                     <button class="btn btn-outline-secondary" type="button" onclick="decreaseQty()">-</button>
                                     <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ $product->stok }}" class="form-control text-center">
                                     <button class="btn btn-outline-secondary" type="button" onclick="increaseQty()">+</button>
@@ -93,19 +93,40 @@
     </div>
 
     <script>
-        function increaseQty() {
+        (function(){
             const input = document.getElementById('quantity');
-            const max = parseInt(input.max);
-            if (parseInt(input.value) < max) {
-                input.value = parseInt(input.value) + 1;
-            }
-        }
 
-        function decreaseQty() {
-            const input = document.getElementById('quantity');
-            if (parseInt(input.value) > 1) {
-                input.value = parseInt(input.value) - 1;
+            function clampQuantity() {
+                const min = parseInt(input.getAttribute('min'), 10) || 1;
+                const max = parseInt(input.getAttribute('max'), 10) || min;
+                let val = parseInt(input.value, 10);
+                if (isNaN(val)) val = min;
+                if (val < min) val = min;
+                if (val > max) val = max;
+                input.value = val;
             }
-        }
+
+            window.increaseQty = function() {
+                clampQuantity();
+                const min = parseInt(input.getAttribute('min'), 10) || 1;
+                const max = parseInt(input.getAttribute('max'), 10) || min;
+                let val = parseInt(input.value, 10) || min;
+                if (val < max) {
+                    input.value = val + 1;
+                }
+            }
+
+            window.decreaseQty = function() {
+                clampQuantity();
+                const min = parseInt(input.getAttribute('min'), 10) || 1;
+                let val = parseInt(input.value, 10) || min;
+                if (val > min) {
+                    input.value = val - 1;
+                }
+            }
+
+            input.addEventListener('input', clampQuantity);
+            input.addEventListener('change', clampQuantity);
+        })();
     </script>
 @endsection
