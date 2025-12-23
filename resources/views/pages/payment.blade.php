@@ -21,6 +21,7 @@
                     @endforeach
                 </div>
             @endif
+            
 
             <form action="{{ route('payment.store') }}" method="POST">
                 @csrf
@@ -195,7 +196,7 @@
                         <span class="text-warning">Rp {{ number_format($total ?? 0, 0, ',', '.') }}</span>
                     </div>
                 </div>
-            </div>
+            </div>            
         </div>
     </div>
 </div>

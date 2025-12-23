@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [App\Http\Controllers\BerandaController::class, 'index'])->name('pages.beranda');
 
+
 // Dashboard (protected, seller-only)
 Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsSeller::class])->group(function() {
     Route::get('/beranda/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard.index');
@@ -51,11 +52,17 @@ Route::post('/beranda/cart/add', [App\Http\Controllers\CartController::class, 's
 Route::post('/beranda/cart/update/{id}', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
 Route::delete('/beranda/cart/{id}', [App\Http\Controllers\CartController::class, 'destroy'])->name('cart.destroy');
 
+Route::get('/cities/{provinceId}', [App\Http\Controllers\CartController::class, 'getCities']);
+Route::get('/districts/{cityId}', [App\Http\Controllers\CartController::class, 'getDistricts']);
+Route::post('/check-ongkir', [App\Http\Controllers\CartController::class, 'checkOngkir']);
+
+
 // Payment Routes
 Route::middleware('auth')->group(function () {
     Route::get('/beranda/payment', [App\Http\Controllers\PaymentController::class, 'index'])->name('payment.index');
     Route::post('/beranda/payment', [App\Http\Controllers\PaymentController::class, 'store'])->name('payment.store');
     Route::get('/beranda/payment/retry/{id}', [App\Http\Controllers\PaymentController::class, 'retry'])->name('payment.retry');
+
 
 // Biteship integration endpoints
 Route::post('/biteship/quote', [BiteshipController::class, 'quote']);
@@ -108,3 +115,11 @@ Route::get('/_debug/midtrans-config', function() {
         ]
     ]);
 });
+
+
+
+// Route::get('/cities/{provinceId}', [App\Http\Controllers\RajaOngkirController::class, 'getCities']);
+// //route to get districts based on city ID
+// Route::get('/districts/{cityId}', [App\Http\Controllers\RajaOngkirController::class, 'getDistricts']);
+// //route to post shipping cost
+// Route::post('/check-ongkir', [App\Http\Controllers\RajaOngkirController::class, 'checkOngkir']);
