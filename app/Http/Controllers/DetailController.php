@@ -28,6 +28,12 @@ class DetailController extends Controller
      */
     public function store(Request $request)
     {
+        // Prevent admins from adding products to cart
+        $user = $request->user();
+        if ($user && ($user->role ?? '') === 'admin') {
+            return redirect()->route('pages.beranda')->with('error', 'Admin tidak bisa membeli barang.');
+        }
+
         $products = Products::find($request->id);
 
         if (!$products) {

@@ -7,7 +7,7 @@
           <i class="fas fa-fish me-2"></i>Mancingin<span class="text-primary">Aje</span>
         </h4>
         <p class="text-white-50 mb-4">Platform terpercaya untuk membeli peralatan pancing berkualitas tinggi. Melayani pemancing Indonesia sejak 2024.</p>
-        <div class="social-links d-flex gap-2">
+        <div class="social-links d-flex gap-2 justify-content-center w-100 mt-3">
           <a href="#" class="btn btn-outline-light btn-sm rounded-circle" style="width: 40px; height: 40px;">
             <i class="fab fa-facebook-f"></i>
           </a>

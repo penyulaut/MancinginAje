@@ -78,7 +78,7 @@
                   </a></li>
                 @endif
                 @if(auth()->check() && auth()->user()->role === 'admin')
-                  <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}">
+                  <li><a class="dropdown-item" href="{{ route('admin.dashboard.index', ['tab' => 'transactions']) }}">
                     <i class="fas fa-clipboard-list me-2 text-primary"></i>Daftar Pesanan
                   </a></li>
                 @else

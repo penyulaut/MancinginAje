@@ -13,6 +13,11 @@ class OrderController extends Controller
 
     public function index()
     {
+        // Prevent admins from accessing checkout
+        $user = Auth::user();
+        if ($user && ($user->role ?? '') === 'admin') {
+            return redirect()->route('pages.beranda')->with('error', 'Admin tidak bisa membeli barang.');
+        }
         $cart = session()->get('cart', []);
         $total = 0;
         foreach ($cart as $item) {
@@ -24,6 +29,11 @@ class OrderController extends Controller
 
     public function chekout()
     {
+        // Prevent admins from performing checkout
+        $user = Auth::user();
+        if ($user && ($user->role ?? '') === 'admin') {
+            return redirect()->route('pages.beranda')->with('error', 'Admin tidak bisa membeli barang.');
+        }
         $cart = session()->get('cart', []);
         $total = 0;
         foreach ($cart as $item) {
