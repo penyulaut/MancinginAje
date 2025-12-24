@@ -117,9 +117,23 @@
                                         <td>Rp {{ number_format($item->price * $item->quantity, 0, ',', '.') }}</td>
                                     </tr>
                                 @endforeach
-                                <tr class="fw-bold border-top">
+                                @php
+                                    $productsTotal = $order->items->reduce(function($carry, $it){
+                                        return $carry + ($it->price * $it->quantity);
+                                    }, 0);
+                                    $shippingCost = (float) ($order->shipping_cost ?? 0);
+                                @endphp
+                                <tr class="border-top">
+                                    <td colspan="3" class="text-end">Subtotal Produk:</td>
+                                    <td>Rp {{ number_format($productsTotal, 0, ',', '.') }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end">Ongkir:</td>
+                                    <td>Rp {{ number_format($shippingCost, 0, ',', '.') }}</td>
+                                </tr>
+                                <tr class="fw-bold">
                                     <td colspan="3" class="text-end">Total:</td>
-                                    <td>Rp {{ number_format($order->total_harga, 0, ',', '.') }}</td>
+                                    <td>Rp {{ number_format($productsTotal + $shippingCost, 0, ',', '.') }}</td>
                                 </tr>
                             </tbody>
                         </table>

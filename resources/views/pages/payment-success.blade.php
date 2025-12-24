@@ -84,9 +84,19 @@
                                     @endforeach
                                 </tbody>
                                 <tfoot>
+                                    @php
+                                        $productsTotal = $order->items->reduce(function($carry, $it){
+                                            return $carry + ($it->price * $it->quantity);
+                                        }, 0);
+                                        $shippingCost = (float) ($order->shipping_cost ?? 0);
+                                    @endphp
+                                    <tr>
+                                        <td colspan="3" class="text-end">Ongkir:</td>
+                                        <td>Rp {{ number_format($shippingCost,0,',','.') }}</td>
+                                    </tr>
                                     <tr class="fw-bold">
                                         <td colspan="3" class="text-end">Total:</td>
-                                        <td>Rp {{ number_format($order->total_harga,0,',','.') }}</td>
+                                        <td>Rp {{ number_format($productsTotal + $shippingCost,0,',','.') }}</td>
                                     </tr>
                                 </tfoot>
                             </table>
