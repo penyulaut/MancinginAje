@@ -64,6 +64,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/beranda/payment', [App\Http\Controllers\PaymentController::class, 'index'])->name('payment.index');
     Route::post('/beranda/payment', [App\Http\Controllers\PaymentController::class, 'store'])->name('payment.store');
     Route::get('/beranda/payment/retry/{id}', [App\Http\Controllers\PaymentController::class, 'retry'])->name('payment.retry');
+    // Endpoint to accept Snap client success payloads to update order immediately
+    Route::post('/beranda/payment/snap-callback', [App\Http\Controllers\PaymentController::class, 'snapCallback'])->name('payment.snap.callback');
 
 
 // Biteship integration endpoints
