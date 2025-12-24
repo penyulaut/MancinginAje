@@ -63,6 +63,10 @@
 
                         <div class="mb-3">
                             <label for="shipping_address" class="form-label">Alamat Pengiriman</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" value="1" id="use_profile_address">
+                                <label class="form-check-label small" for="use_profile_address">Gunakan alamat dari profil</label>
+                            </div>
                             <textarea class="form-control @error('shipping_address') is-invalid @enderror"
                                       id="shipping_address" name="shipping_address" rows="3" required>{{ old('shipping_address', auth()->user()->address ?? '') }}</textarea>
                             @error('shipping_address')
@@ -191,9 +195,18 @@
 
                     <hr>
 
+                    <div class="d-flex justify-content-between">
+                        <span>Subtotal:</span>
+                        <span>Rp {{ number_format($total ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Ongkir:</span>
+                        <span>Rp {{ number_format(data_get($shipping, 'cost', 0), 0, ',', '.') }}</span>
+                    </div>
+                    <hr>
                     <div class="d-flex justify-content-between fw-bold">
                         <span>Total:</span>
-                        <span class="text-warning">Rp {{ number_format($total ?? 0, 0, ',', '.') }}</span>
+                        <span class="text-warning">Rp {{ number_format($totalWithShipping ?? ($total ?? 0), 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>            
@@ -201,3 +214,24 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const chk = document.getElementById('use_profile_address');
+    const ta = document.getElementById('shipping_address');
+    const profileAddress = {!! json_encode(auth()->user()->address ?? '') !!};
+
+    if (chk && ta) {
+        chk.addEventListener('change', function () {
+            if (this.checked) {
+                ta.value = profileAddress;
+                ta.setAttribute('readonly', 'readonly');
+            } else {
+                ta.removeAttribute('readonly');
+            }
+        });
+    }
+});
+</script>
+@endpush

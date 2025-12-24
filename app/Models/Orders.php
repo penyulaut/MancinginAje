@@ -20,6 +20,13 @@ class Orders extends Model
         'snap_token',
         'transaction_id',
         'payment_status',
+        // shipping fields
+        'shipping_city',
+        'shipping_province',
+        'shipping_postal_code',
+        'shipping_service',
+        'shipping_cost',
+        'biteship',
     ];
 
     public function user()

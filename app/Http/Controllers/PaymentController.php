@@ -49,7 +49,11 @@ class PaymentController extends Controller
             $total += $product->harga * $quantity;
         }
 
-        return view('pages.payment', compact('items', 'total'));
+        // include shipping stored in session (if selected)
+        $shipping = session()->get('shipping', ['cost' => 0, 'service' => null, 'city' => null, 'province' => null]);
+        $totalWithShipping = $total + (float)($shipping['cost'] ?? 0);
+
+        return view('pages.payment', compact('items', 'total', 'shipping', 'totalWithShipping'));
     }
 
     public function store(Request $request)
@@ -90,10 +94,14 @@ class PaymentController extends Controller
                 $total += $product->harga * $quantity;
             }
 
-            // create order
+            // include shipping stored in session (if any)
+            $shipping = session()->get('shipping', ['cost' => 0, 'service' => null, 'city' => null, 'province' => null]);
+            $shippingCost = (float) ($shipping['cost'] ?? 0);
+
+            // create order with shipping included in total_harga
             $order = Orders::create([
                 'user_id' => Auth::id(),
-                'total_harga' => $total,
+                'total_harga' => $total + $shippingCost,
                 'status' => 'pending',
                 'customer_name' => $validated['customer_name'],
                 'customer_email' => $validated['customer_email'],
@@ -101,6 +109,12 @@ class PaymentController extends Controller
                 'shipping_address' => $validated['shipping_address'],
                 'payment_method' => $validated['payment_method'],
                 'payment_status' => 'pending',
+                // persist shipping details
+                'shipping_city' => $shipping['city'] ?? null,
+                'shipping_province' => $shipping['province'] ?? null,
+                'shipping_service' => $shipping['service'] ?? null,
+                'shipping_cost' => $shippingCost,
+                'biteship' => $shipping['biteship'] ?? null,
             ]);
 
             // create order items (stock already decremented when added to cart)
@@ -117,6 +131,12 @@ class PaymentController extends Controller
             }
 
             DB::commit();
+            // clear session shipping and cart only after order draft creation (payment flow will clear cart upon success)
+            try {
+                session()->forget('shipping');
+            } catch (\Throwable $e) {
+                Log::warning('Failed to clear shipping session after order create', ['error' => $e->getMessage(), 'order_id' => $order->id]);
+            }
             // Dispatch a delayed job to auto-cancel if still unpaid after 5 minutes
             try {
                 CancelOrderIfUnpaid::dispatch($order->id)->delay(now()->addMinutes(5));
