@@ -18,8 +18,9 @@ class ProductController extends Controller
         // Ambil input pencarian dari form
         $search = trim($request->input('search'));
 
-        // Query produk dengan filter pencarian yang lebih pintar
-        $products = Products::query();
+        // Query produk dengan filter pencarian yang lebih pintar - optimized with select
+        $products = Products::select('id', 'nama', 'deskripsi', 'gambar', 'harga', 'stok', 'category_id')
+            ->with('category:id,nama');
 
         if ($search) {
             // Split search terms untuk multiple keywords
@@ -40,8 +41,7 @@ class ProductController extends Controller
                 // Multiple keywords search
                 foreach ($searchTerms as $term) {
                     if (strlen($term) > 2) { // Minimal 3 karakter
-                        $query->orWhereRaw('LOWER(nama) LIKE LOWER(?)', ["%{$term}%"])
-                              ->orWhereRaw('LOWER(deskripsi) LIKE LOWER(?)', ["%{$term}%"]);
+                        $query->orWhereRaw('LOWER(nama) LIKE LOWER(?)', ["%{$term}%"]);
                     }
                 }
             });
@@ -49,15 +49,15 @@ class ProductController extends Controller
 
         $products = $products->paginate(12)->appends(request()->query());
 
-        // Ambil semua kategori untuk ditampilkan (dengan cache) dan muat produknya
-        $categories = Cache::remember('categories_with_products', 3600, function () {
-            return Category::with('products')->get();
+        // Ambil kategori dengan cache (tanpa load semua produk!)
+        $categories = Cache::remember('categories_list', 3600, function () {
+            return Category::select('id', 'nama', 'slug')->withCount('products')->get();
         });
 
         return view('pages.orders', [
             'products' => $products,
             'categories' => $categories,
-            'searchTerm' => $search, // Kirim search term ke view
+            'searchTerm' => $search,
         ]);
     }
 

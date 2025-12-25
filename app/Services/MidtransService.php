@@ -146,7 +146,8 @@ class MidtransService
             $params['payment_type'] = 'qris';
         } else {
             try {
-                $snapToken = Snap::getSnapToken($params);
+                // Delegate to createSnapToken so tests can override that method when binding a fake service
+                $snapToken = $this->createSnapToken($order);
                 return (object) ['snap_token' => $snapToken];
             } catch (\Throwable $e) {
                 throw new \Exception('Midtrans Snap Error: ' . $e->getMessage());
@@ -194,11 +195,11 @@ class MidtransService
                 $order->status = 'pending';
             } else {
                 $order->payment_status = 'paid';
-                $order->status = 'completed';
+                $order->status = 'paid';
             }
         } elseif ($transactionStatus === 'settlement') {
             $order->payment_status = 'paid';
-            $order->status = 'completed';
+            $order->status = 'paid';
         } elseif ($transactionStatus === 'pending') {
             $order->payment_status = 'pending';
             $order->status = 'pending';
@@ -255,11 +256,11 @@ class MidtransService
                 $order->status = 'pending';
             } else {
                 $order->payment_status = 'paid';
-                $order->status = 'completed';
+                $order->status = 'paid';
             }
         } elseif ($transactionStatus === 'settlement') {
             $order->payment_status = 'paid';
-            $order->status = 'completed';
+            $order->status = 'paid';
         } elseif ($transactionStatus === 'pending') {
             $order->payment_status = 'pending';
             $order->status = 'pending';
