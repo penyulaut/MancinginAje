@@ -7,6 +7,7 @@ use App\Models\Products;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
 use App\Models\ShippingRateCache;
 use Carbon\Carbon;
 
@@ -76,8 +77,11 @@ class CartController extends Controller
         ]);
 
         $addresses = [];
-        if (auth()->check()) {
-            $addresses = auth()->user()->addresses()->orderByDesc('is_default')->get();
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user && method_exists($user, 'addresses')) {
+                $addresses = $user->addresses()->orderByDesc('is_default')->get();
+            }
         }
 
         return view('pages.cart', compact('items', 'cart', 'total', 'provinces', 'shipping', 'addresses'))
@@ -99,7 +103,8 @@ class CartController extends Controller
     public function store(Request $request)
     {
         // Admins cannot add products to cart / purchase
-        if ($request->user() && $request->user()->role === 'admin') {
+        $currentUser = Auth::user();
+        if ($currentUser && ($currentUser->role ?? '') === 'admin') {
             return redirect()->route('pages.beranda')->with('error', 'Admin tidak dapat melakukan pembelian.');
         }
 
@@ -272,11 +277,13 @@ class CartController extends Controller
         ])->get("https://rajaongkir.komerce.id/api/v1/destination/city/{$provinceId}");
 
         if ($response->successful()) {
-
             // Mengambil data kota dari respons JSON
             // Jika 'data' tidak ada, inisialisasi dengan array kosong
             return response()->json($response->json()['data'] ?? []);
         }
+
+        // Return empty list on failure with upstream status if available
+        return response()->json([], $response->status() ?? 502);
     }
 
     /**
@@ -297,11 +304,13 @@ class CartController extends Controller
         ])->get("https://rajaongkir.komerce.id/api/v1/destination/district/{$cityId}");
 
         if ($response->successful()) {
-
             // Mengambil data kecamatan dari respons JSON
             // Jika 'data' tidak ada, inisialisasi dengan array kosong
             return response()->json($response->json()['data'] ?? []);
         }
+
+        // Return empty list on failure with upstream status if available
+        return response()->json([], $response->status() ?? 502);
     }
 
     /**

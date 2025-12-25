@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['customer', 'admin'])->default('customer')->after('email');
+            // Use a simple string column for role to avoid DB-specific enum/check issues in tests.
+            $table->string('role')->default('customer')->after('email');
             $table->text('address')->nullable()->after('role');
             $table->string('phone')->nullable()->after('address');
         });

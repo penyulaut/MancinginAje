@@ -47,60 +47,79 @@ class DashboardController extends Controller
             return redirect()->route('pages.beranda')->with('error', 'Akses ditolak.');
         }
 
-        // Products list
-        $products = Products::with('category', 'seller')->get();
-        $totalProducts = $products->count();
-
-        // Transactions / orders
-        $totalTransactions = Orders::count();
-        $recentTransactions = Orders::with('user', 'items.product')->orderBy('created_at', 'desc')->limit(10)->get();
-
-        // If the admin requests the full transactions tab, load all orders (paginated)
-        $activeTab = $request->input('tab', 'products');
+        $activeTab = $request->input('tab', 'dashboard');
+        
+        // Initialize variables
+        $products = collect();
         $allOrders = null;
-        if ($activeTab === 'transactions') {
+        $recentProducts = collect();
+        $recentOrders = collect();
+        $lowStockProducts = collect();
+        $recentTransactions = collect();
+        $recentUsers = collect();
+        
+        // Cache counts for 5 minutes to reduce DB load
+        $totalProducts = \Illuminate\Support\Facades\Cache::remember('admin_total_products', 300, fn() => Products::count());
+        $activeProducts = \Illuminate\Support\Facades\Cache::remember('admin_active_products', 300, fn() => Products::where('status', 'active')->count());
+        $inactiveProducts = \Illuminate\Support\Facades\Cache::remember('admin_inactive_products', 300, fn() => Products::where('status', 'inactive')->orWhere('stok', '<=', 0)->count());
+        $totalCategories = \Illuminate\Support\Facades\Cache::remember('admin_total_categories', 300, fn() => Category::count());
+        $totalTransactions = \Illuminate\Support\Facades\Cache::remember('admin_total_transactions', 300, fn() => Orders::count());
+        $totalUsers = \Illuminate\Support\Facades\Cache::remember('admin_total_users', 300, fn() => \App\Models\User::count());
+        $totalRevenue = \Illuminate\Support\Facades\Cache::remember('admin_total_revenue', 300, fn() => Orders::where('payment_status', 'paid')->sum('total_harga'));
+        $transactionsPending = \Illuminate\Support\Facades\Cache::remember('admin_pending', 300, fn() => Orders::where('status', 'pending')->count());
+        $transactionsPaid = \Illuminate\Support\Facades\Cache::remember('admin_paid', 300, fn() => Orders::where('status', 'completed')->count());
+        $transactionsCancelled = \Illuminate\Support\Facades\Cache::remember('admin_cancelled', 300, fn() => Orders::where('status', 'cancelled')->orWhere('status', 'failed')->count());
+
+        // Load data based on active tab only
+        if ($activeTab === 'dashboard') {
+            // Only load what dashboard needs
+            $recentProducts = Products::select('id', 'nama', 'gambar', 'harga', 'stok', 'category_id')
+                ->with('category:id,nama')
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+            $recentOrders = Orders::select('id', 'customer_name', 'user_id', 'total_harga', 'status', 'payment_status', 'created_at')
+                ->with('user:id,name')
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+            $lowStockProducts = Products::select('id', 'nama', 'gambar', 'stok', 'category_id')
+                ->where('stok', '<', 10)
+                ->where('stok', '>', 0)
+                ->with('category:id,nama')
+                ->limit(4)
+                ->get();
+        } elseif ($activeTab === 'products') {
+            $products = Products::select('id', 'nama', 'gambar', 'harga', 'stok', 'category_id', 'seller_id', 'status')
+                ->with('category:id,nama', 'seller:id,name')
+                ->get();
+        } elseif ($activeTab === 'transactions') {
             $sort = $request->input('sort', 'date_desc');
             $statusFilter = $request->input('status');
 
-            $ordersQuery = Orders::with('user', 'items.product');
+            $ordersQuery = Orders::select('id', 'customer_name', 'user_id', 'total_harga', 'status', 'payment_status', 'created_at')
+                ->with(['user:id,name,email', 'items:id,order_id,product_id,quantity', 'items.product:id,nama']);
+            
             if ($statusFilter) {
                 $ordersQuery->where('status', $statusFilter);
             }
 
-            if ($sort === 'date_asc') {
-                $ordersQuery->orderBy('created_at', 'asc');
-            } else {
-                $ordersQuery->orderBy('created_at', 'desc');
-            }
-
-            $allOrders = $ordersQuery->paginate(25)->appends($request->only(['sort','status']));
+            $ordersQuery->orderBy('created_at', $sort === 'date_asc' ? 'asc' : 'desc');
+            $allOrders = $ordersQuery->paginate(10)->appends($request->only(['tab', 'sort', 'status']));
+        } elseif ($activeTab === 'users') {
+            $recentUsers = \App\Models\User::select('id', 'name', 'email', 'role', 'created_at')
+                ->orderBy('created_at', 'desc')
+                ->limit(20)
+                ->get();
         }
 
-        // Transaction status breakdown
-        $transactionsPending = Orders::where('status', 'pending')->count();
-        // Count completed orders as paid revenue
-        $transactionsPaid = Orders::where('status', 'completed')->count();
-        $transactionsCancelled = Orders::where('status', 'cancelled')->orWhere('status', 'failed')->count();
-
-        // Users and revenue
-        $totalUsers = \App\Models\User::count();
-        $recentUsers = \App\Models\User::orderBy('created_at', 'desc')->limit(10)->get();
-        $totalRevenue = Orders::where('payment_status', 'paid')->sum('total_harga');
-
-        return view('dashboard.index', [
-            'products' => $products,
-            'totalProducts' => $totalProducts,
-            'totalTransactions' => $totalTransactions,
-            'recentTransactions' => $recentTransactions,
-            'totalUsers' => $totalUsers,
-            'totalRevenue' => $totalRevenue,
-            'transactionsPending' => $transactionsPending,
-            'transactionsPaid' => $transactionsPaid,
-            'transactionsCancelled' => $transactionsCancelled,
-            'recentUsers' => $recentUsers,
-            'activeTab' => $activeTab,
-            'allOrders' => $allOrders,
-        ]);
+        return view('dashboard.index', compact(
+            'products', 'totalProducts', 'activeProducts', 'inactiveProducts',
+            'totalCategories', 'lowStockProducts', 'recentProducts', 'recentOrders',
+            'totalTransactions', 'recentTransactions', 'totalUsers', 'totalRevenue',
+            'transactionsPending', 'transactionsPaid', 'transactionsCancelled',
+            'recentUsers', 'activeTab', 'allOrders'
+        ));
     }
 
     /**
@@ -181,7 +200,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Admin: list all orders with status and items
+     * Admin: list only active/pending orders
      */
     public function orders(Request $request)
     {
@@ -190,16 +209,13 @@ class DashboardController extends Controller
             return redirect()->route('pages.beranda')->with('error', 'Akses ditolak.');
         }
 
-        $status = $request->input('status'); // optional filter
+        // Only show pending orders (currently active orders)
+        $orders = Orders::with('user', 'items.product')
+            ->where('status', 'pending')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        $query = Orders::with('user', 'items.product')->orderBy('created_at', 'desc');
-        if ($status) {
-            $query->where('status', $status);
-        }
-
-        $orders = $query->get();
-
-        return view('dashboard.orders', compact('orders', 'status'));
+        return view('dashboard.orders', compact('orders'));
     }
 
     /**
@@ -360,5 +376,71 @@ class DashboardController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    /**
+     * Export transactions to XLSX format
+     */
+    public function exportTransactions(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || $user->role !== 'admin') {
+            return redirect()->route('pages.beranda')->with('error', 'Akses ditolak.');
+        }
+
+        $statusFilter = $request->input('status');
+        $sort = $request->input('sort', 'date_desc');
+
+        $query = Orders::with('user', 'items.product');
+        if ($statusFilter) {
+            $query->where('status', $statusFilter);
+        }
+
+        if ($sort === 'date_asc') {
+            $query->orderBy('created_at', 'asc');
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        $orders = $query->get();
+
+        // Build CSV/XLSX data
+        $filename = 'transactions_' . date('Y-m-d_His') . '.xlsx';
+        
+        $headers = [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($orders) {
+            $file = fopen('php://output', 'w');
+            
+            // BOM for Excel UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Header row
+            fputcsv($file, ['Order ID', 'Tanggal', 'Pelanggan', 'Email', 'Items', 'Total', 'Status', 'Payment Status'], ';');
+            
+            foreach ($orders as $order) {
+                $items = $order->items->map(function($item) {
+                    return ($item->product?->nama ?? 'Produk') . ' x' . $item->quantity;
+                })->implode(', ');
+                
+                fputcsv($file, [
+                    $order->id,
+                    $order->created_at->format('Y-m-d H:i:s'),
+                    $order->customer_name ?? $order->user?->name ?? 'Guest',
+                    $order->user?->email ?? '-',
+                    $items,
+                    $order->total_harga,
+                    $order->status,
+                    $order->payment_status ?? '-',
+                ], ';');
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

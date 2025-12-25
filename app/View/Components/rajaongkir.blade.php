@@ -1,26 +1,6 @@
 <?php
+// placeholder file — real component class lives in App\View\Components\rajaongkir.php
+// and the Blade view is resources/views/components/rajaongkir.blade.php
+// This file intentionally left minimal to avoid parsing issues.
 
-namespace App\View\Components;
-
-use Closure;
-use Illuminate\Contracts\View\View;
-use Illuminate\View\Component;
-
-class rajaongkir.blade extends Component
-{
-    /**
-     * Create a new component instance.
-     */
-    public function __construct()
-    {
-        //
-    }
-
-    /**
-     * Get the view / contents that represent the component.
-     */
-    public function render(): View|Closure|string
-    {
-        return view('components.rajaongkir.blade.php');
-    }
-}
+?>
