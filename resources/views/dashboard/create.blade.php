@@ -38,6 +38,13 @@
                         <input type="number" class="form-control" id="stok" name="stok" value="{{ old('stok', $productsDetail->stok??'') }}" required>
                     </div>
 
+                    <!-- Berat -->
+                    <div class="mb-3">
+                        <label for="berat" class="form-label">Berat (gram)</label>
+                        <input type="number" class="form-control" id="berat" name="berat" value="{{ old('berat', $productsDetail->berat??0) }}" min="0">
+                        <div class="form-text">Masukkan berat per item dalam gram (digunakan untuk perhitungan ongkir).</div>
+                    </div>
+
                     <!-- Kategori -->
                     <div class="mb-3">
                         <label for="category_id" class="form-label">Kategori</label>

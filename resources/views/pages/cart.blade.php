@@ -95,14 +95,17 @@
                         <span>Subtotal</span>
                         <span>Rp {{ number_format($total,0,',','.') }}</span>
                     </div>
+                    @php
+                        $shippingCostInitial = isset($shipping) ? (float)($shipping['cost'] ?? 0) : 0;
+                    @endphp
                     <div class="d-flex justify-content-between mb-2">
                         <span>Ongkir</span>
-                        <span id="shipping-cost">Rp 0</span>
+                        <span id="shipping-cost">Rp {{ number_format($shippingCostInitial,0,',','.') }}</span>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between fw-bold fs-5">
                         <span>Total</span>
-                        <span id="total-price">Rp {{ number_format($total,0,',','.') }}</span>
+                        <span id="total-price">Rp {{ number_format($total + $shippingCostInitial,0,',','.') }}</span>
                     </div>
 
                     <a href="{{ auth()->check() ? route('payment.index') : route('login') }}"
@@ -121,26 +124,22 @@
             <h5 class="mb-3">Hitung Ongkos Kirim</h5>
 
             <div class="row g-3">
-                <div class="col-md-4">
-                    <select id="province" class="form-select">
-                        <option value="">Pilih Provinsi</option>
-                        @foreach($provinces as $p)
-                            <option value="{{ $p['id'] }}">{{ $p['name'] }}</option>
+                @if(auth()->check() && isset($addresses) && count($addresses) > 0)
+                <div class="col-12 mb-2">
+                    <label class="form-label">Pilih Alamat (dari profil)</label>
+                    <select id="saved-address" class="form-select">
+                        <option value="">Pilih alamat dari profil</option>
+                        @foreach($addresses as $a)
+                            <option value="{{ $a->id }}" data-district="{{ $a->district_id }}" data-province-name="{{ $a->province_name }}" data-city-name="{{ $a->city_name }}" data-district-name="{{ $a->district_name }}" @if($a->is_default) selected @endif>{{ $a->label ?? 'Alamat' }} - {{ Str::limit($a->address_line, 50) }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <select id="city" class="form-select">
-                        <option value="">Pilih Kota</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <select id="district" class="form-select">
-                        <option value="">Pilih Kecamatan</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <input type="number" id="weight" class="form-control" placeholder="Berat (gram)">
+                @else
+                <div class="col-12 mb-2 text-muted">Tidak ada alamat tersimpan — silakan tambahkan di Profil.</div>
+                @endif
+                <div class="col-12 mb-2">
+                    <label class="form-label">Berat (otomatis dari produk)</label>
+                    <input type="number" id="weight" class="form-control" placeholder="Berat (gram)" value="{{ $totalWeight ?? 0 }}" readonly>
                 </div>
             </div>
 
@@ -174,53 +173,168 @@ $(function () {
 
     const rupiah = n => new Intl.NumberFormat('id-ID').format(n);
 
-    $('#province').change(function () {
-        $('#city').html('<option>Loading...</option>');
-        $.get(`/cities/${this.value}`, r => {
-            $('#city').html('<option>Pilih Kota</option>');
-            r.forEach(v => $('#city').append(`<option value="${v.id}">${v.name}</option>`));
-        });
-    });
-
-    $('#city').change(function () {
-        $('#district').html('<option>Loading...</option>');
-        $.get(`/districts/${this.value}`, r => {
-            $('#district').html('<option>Pilih Kecamatan</option>');
-            r.forEach(v => $('#district').append(`<option value="${v.id}">${v.name}</option>`));
-        });
-    });
+    // Province/city/district selection removed — using saved profile addresses only.
 
     $('#btn-ongkir').click(function () {
 
-        let data = {
+        // Use selected saved address as destination
+        const selected = $('#saved-address').find(':selected');
+        const districtId = selected.data('district');
+        let courier = $('input[name=courier]:checked').val();
+        const weight = $('#weight').val();
+
+        if (!districtId) {
+            alert('Pilih alamat dari profil terlebih dahulu.');
+            return;
+        }
+        if (!courier) {
+            courier = 'jne';
+            $('input[name=courier][value="' + courier + '"]').prop('checked', true);
+        }
+
+        const data = {
             _token: $('meta[name=csrf-token]').attr('content'),
-            district_id: $('#district').val(),
-            courier: $('input[name=courier]:checked').val(),
-            weight: $('#weight').val()
+            district_id: districtId,
+            courier: courier,
+            weight: weight
         };
 
-        if (!data.district_id || !data.courier || !data.weight) {
-            alert('Lengkapi data');
-            return;
+        $('#loading-indicator').show();
+
+        $.post('/check-ongkir', data)
+            .done(res => {
+                $('#results-ongkir').empty();
+
+                // render options with a "Pilih" button to save shipping to session
+                res.forEach((v, idx) => {
+                    const cost = v.cost;
+                    const service = v.service || v.description || `service-${idx}`;
+                    const etd = v.etd || '';
+                    $('#results-ongkir').append(`
+                        <div class="d-flex justify-content-between border rounded p-2 mb-2 align-items-center">
+                            <div>
+                                <div>${service} ${etd ? '('+etd+')' : ''}</div>
+                                <small class="text-muted">${v.description ?? ''}</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="mb-2"><strong>Rp ${rupiah(cost)}</strong></div>
+                                <button class="btn btn-sm btn-success btn-select-shipping" data-cost="${cost}" data-service="${service}" data-etd="${etd}">Pilih</button>
+                            </div>
+                        </div>
+                    `);
+                });
+
+                // attach click handler for choosing a shipping option
+                $('.btn-select-shipping').click(function () {
+                    const btn = $(this);
+                        const payload = {
+                        _token: $('meta[name=csrf-token]').attr('content'),
+                        cost: btn.data('cost'),
+                        service: btn.data('service'),
+                        etd: btn.data('etd'),
+                        courier: $('input[name=courier]:checked').val(),
+                        district_id: $('#saved-address').find(':selected').data('district'),
+                        province: $('#saved-address').find(':selected').data('province-name') || null,
+                        city: $('#saved-address').find(':selected').data('city-name') || null,
+                    };
+
+                    btn.prop('disabled', true).text('Menyimpan...');
+
+                    $.post('/beranda/cart/shipping', payload, res2 => {
+                        if (res2 && res2.shipping) {
+                            const sc = parseFloat(res2.shipping.cost || 0);
+                            $('#shipping-cost').text('Rp ' + rupiah(sc));
+                            $('#total-price').text('Rp ' + rupiah(sc + {{ $total }}));
+                        }
+                    }).fail(() => alert('Gagal menyimpan pilihan ongkir.')).always(() => btn.prop('disabled', false).text('Pilih'));
+                });
+
+            })
+            .fail(() => {
+                alert('Gagal menghitung ongkir. Periksa koneksi atau konfigurasi API RajaOngkir.');
+            })
+            .always(() => $('#loading-indicator').hide());
+    });
+
+    // when user selects a saved address, auto-calc ongkir if courier+weight present
+    // when user selects a saved address, auto-calc ongkir using product weight
+    $('#saved-address').change(function () {
+        const selected = $(this).find(':selected');
+        const district = selected.data('district');
+
+        if (!district) return;
+
+        // ensure weight is present (prefilled from cart totalWeight)
+        const autoWeight = '{{ $totalWeight ?? 0 }}';
+        $('#weight').val(autoWeight);
+
+        // if courier not selected, auto-pick a sensible default (e.g., 'jne')
+        let selectedCourier = $('input[name=courier]:checked').val();
+        if (!selectedCourier) {
+            selectedCourier = 'jne';
+            $('input[name=courier][value="' + selectedCourier + '"]').prop('checked', true);
         }
 
         $('#loading-indicator').show();
 
-        $.post('/check-ongkir', data, res => {
-            $('#results-ongkir').empty();
-            let cost = res[0].cost;
-            $('#shipping-cost').text('Rp ' + rupiah(cost));
-            $('#total-price').text('Rp ' + rupiah(cost + {{ $total }}));
+        const data = {
+            _token: $('meta[name=csrf-token]').attr('content'),
+            district_id: district,
+            courier: selectedCourier,
+            weight: $('#weight').val()
+        };
 
-            res.forEach(v => {
-                $('#results-ongkir').append(`
-                    <div class="d-flex justify-content-between border rounded p-2 mb-2">
-                        <span>${v.service} (${v.etd})</span>
-                        <strong>Rp ${rupiah(v.cost)}</strong>
-                    </div>
-                `);
-            });
-        }).always(() => $('#loading-indicator').hide());
+        $.post('/check-ongkir', data)
+            .done(res => {
+                $('#results-ongkir').empty();
+                res.forEach((v, idx) => {
+                    const cost = v.cost;
+                    const service = v.service || v.description || `service-${idx}`;
+                    const etd = v.etd || '';
+                    $('#results-ongkir').append(`
+                        <div class="d-flex justify-content-between border rounded p-2 mb-2 align-items-center">
+                            <div>
+                                <div>${service} ${etd ? '('+etd+')' : ''}</div>
+                                <small class="text-muted">${v.description ?? ''}</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="mb-2"><strong>Rp ${rupiah(cost)}</strong></div>
+                                <button class="btn btn-sm btn-success btn-select-shipping" data-cost="${cost}" data-service="${service}" data-etd="${etd}">Pilih</button>
+                            </div>
+                        </div>
+                    `);
+                });
+
+                // attach click handler (re-use same logic as manual)
+                $('.btn-select-shipping').click(function () {
+                    const btn = $(this);
+                    const payload = {
+                        _token: $('meta[name=csrf-token]').attr('content'),
+                        cost: btn.data('cost'),
+                        service: btn.data('service'),
+                        etd: btn.data('etd'),
+                        courier: $('input[name=courier]:checked').val(),
+                        district_id: district,
+                        province: selected.data('province-name') || null,
+                        city: selected.data('city-name') || null,
+                    };
+
+                    btn.prop('disabled', true).text('Menyimpan...');
+
+                    $.post('/beranda/cart/shipping', payload, res2 => {
+                        if (res2 && res2.shipping) {
+                            const sc = parseFloat(res2.shipping.cost || 0);
+                            $('#shipping-cost').text('Rp ' + rupiah(sc));
+                            $('#total-price').text('Rp ' + rupiah(sc + {{ $total }}));
+                        }
+                    }).fail(() => alert('Gagal menyimpan pilihan ongkir.')).always(() => btn.prop('disabled', false).text('Pilih'));
+                });
+
+            })
+            .fail(() => {
+                alert('Gagal menghitung ongkir. Periksa koneksi atau konfigurasi API RajaOngkir.');
+            })
+            .always(() => $('#loading-indicator').hide());
     });
 
 });

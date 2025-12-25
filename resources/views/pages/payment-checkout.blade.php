@@ -64,13 +64,45 @@
         document.getElementById('pay-button').addEventListener('click', function () {
             window.snap.pay(snapToken, {
                 onSuccess: function(result){
-                    // Do not assume settled — start polling and wait for webhook
-                    startPolling();
-                    alert('Pembayaran diproses. Menunggu konfirmasi dari Midtrans. Halaman akan otomatis diperbarui.');
+                    // POST the result to server so backend can refresh status immediately
+                    (async function(){
+                        try {
+                            await fetch("{{ route('payment.snap.callback') }}", {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify(result)
+                            });
+                        } catch (e) {
+                            console.warn('Failed to notify server about snap success', e);
+                        }
+                        // start polling as fallback
+                        startPolling();
+                        alert('Pembayaran diproses. Menunggu konfirmasi dari Midtrans. Halaman akan otomatis diperbarui.');
+                    })();
                 },
                 onPending: function(result){
-                    startPolling();
-                    alert('Pembayaran pending. Menunggu konfirmasi dari Midtrans.');
+                    // notify server as well so we can persist transaction id
+                    (async function(){
+                        try {
+                            await fetch("{{ route('payment.snap.callback') }}", {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify(result)
+                            });
+                        } catch (e) {
+                            console.warn('Failed to notify server about snap pending', e);
+                        }
+                        startPolling();
+                        alert('Pembayaran pending. Menunggu konfirmasi dari Midtrans.');
+                    })();
                 },
                 onError: function(result){
                     alert('Pembayaran gagal.');

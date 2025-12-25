@@ -52,6 +52,8 @@ Route::post('/beranda/cart/add', [App\Http\Controllers\CartController::class, 's
 Route::post('/beranda/cart/update/{id}', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
 Route::delete('/beranda/cart/{id}', [App\Http\Controllers\CartController::class, 'destroy'])->name('cart.destroy');
 
+// Save selected shipping option to session
+Route::post('/beranda/cart/shipping', [App\Http\Controllers\CartController::class, 'saveShipping'])->name('cart.shipping');
 Route::get('/cities/{provinceId}', [App\Http\Controllers\CartController::class, 'getCities']);
 Route::get('/districts/{cityId}', [App\Http\Controllers\CartController::class, 'getDistricts']);
 Route::post('/check-ongkir', [App\Http\Controllers\CartController::class, 'checkOngkir']);
@@ -62,6 +64,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/beranda/payment', [App\Http\Controllers\PaymentController::class, 'index'])->name('payment.index');
     Route::post('/beranda/payment', [App\Http\Controllers\PaymentController::class, 'store'])->name('payment.store');
     Route::get('/beranda/payment/retry/{id}', [App\Http\Controllers\PaymentController::class, 'retry'])->name('payment.retry');
+    // Endpoint to accept Snap client success payloads to update order immediately
+    Route::post('/beranda/payment/snap-callback', [App\Http\Controllers\PaymentController::class, 'snapCallback'])->name('payment.snap.callback');
 
 
 // Biteship integration endpoints
@@ -79,6 +83,7 @@ Route::get('/biteship/track/{awb}', [BiteshipController::class, 'track']);
     Route::get('/beranda/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
     Route::post('/beranda/profile/update', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
     Route::post('/beranda/profile/address', [App\Http\Controllers\ProfileController::class, 'updateAddress'])->name('profile.address.update');
+    Route::delete('/beranda/profile/address/{id}', [App\Http\Controllers\ProfileController::class, 'deleteAddress'])->name('profile.address.delete');
     Route::get('/beranda/profile/history', [App\Http\Controllers\ProfileController::class, 'history'])->name('profile.history');
 });
 
