@@ -29,7 +29,8 @@ class UserSeeder extends Seeder
             'email' => 'customer@gmail.com',
             'password' => Hash::make('password123'),
             'role' => 'customer',
-            'address' => 'Jl. Customer No. 1, Jakarta',
+            // set address to an example located in Jakarta Pusat (compatible with RajaOngkir destinations)
+            'address' => 'Jl. Medan Merdeka Barat No.1, Gambir, Jakarta Pusat, DKI Jakarta 10110',
             'phone' => '081234567891',
         ]);
     }

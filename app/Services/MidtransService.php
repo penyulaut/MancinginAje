@@ -53,6 +53,17 @@ class MidtransService
             ];
         }
 
+        // include shipping as an item so gross_amount matches item_details sum
+        $shippingCost = (int) ($order->shipping_cost ?? 0);
+        if ($shippingCost > 0) {
+            $itemDetails[] = [
+                'id' => 'shipping',
+                'price' => $shippingCost,
+                'quantity' => 1,
+                'name' => 'Ongkir',
+            ];
+        }
+
         $payload = [
             'transaction_details' => $transactionDetails,
             'customer_details' => $customerDetails,
@@ -98,6 +109,17 @@ class MidtransService
                 'price' => (int) $item->price,
                 'quantity' => $item->quantity,
                 'name' => $item->product->nama ?? 'Product',
+            ];
+        }
+
+        // include shipping as an item so gross_amount equals item sum
+        $shippingCost = (int) ($order->shipping_cost ?? 0);
+        if ($shippingCost > 0) {
+            $itemDetails[] = [
+                'id' => 'shipping',
+                'price' => $shippingCost,
+                'quantity' => 1,
+                'name' => 'Ongkir',
             ];
         }
 

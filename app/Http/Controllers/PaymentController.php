@@ -36,6 +36,11 @@ class PaymentController extends Controller
             return redirect()->route('cart.index')->with('error', 'Keranjang kosong');
         }
 
+        // require shipping to be selected before showing payment page
+        $shippingSession = session()->get('shipping');
+        if (empty($shippingSession) || empty($shippingSession['service']) || (float)($shippingSession['cost'] ?? 0) <= 0) {
+            return redirect()->route('cart.index')->with('error', 'Harap pilih ongkir terlebih dahulu sebelum melanjutkan ke pembayaran.');
+        }
         $items = [];
         $total = 0;
         $productIds = array_keys($cart);
@@ -49,7 +54,11 @@ class PaymentController extends Controller
             $total += $product->harga * $quantity;
         }
 
-        return view('pages.payment', compact('items', 'total'));
+        // include shipping stored in session (guaranteed to exist at this point)
+        $shipping = session()->get('shipping', ['cost' => 0, 'service' => null, 'city' => null, 'province' => null]);
+        $totalWithShipping = $total + (float)($shipping['cost'] ?? 0);
+
+        return view('pages.payment', compact('items', 'total', 'shipping', 'totalWithShipping'));
     }
 
     public function store(Request $request)
@@ -60,17 +69,24 @@ class PaymentController extends Controller
             return redirect()->route('pages.beranda')->with('error', 'Admin tidak dapat melakukan pembelian.');
         }
 
+        // make customer personal fields optional — shipping selection is required instead
         $validated = $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'customer_email' => 'required|email|max:255',
-            'customer_phone' => 'required|string|max:30',
-            'shipping_address' => 'required|string|max:1000',
+            'customer_name' => 'nullable|string|max:255',
+            'customer_email' => 'nullable|email|max:255',
+            'customer_phone' => 'nullable|string|max:30',
+            'shipping_address' => 'nullable|string|max:1000',
             'payment_method' => 'required|string|in:bank_transfer_bca,bank_transfer_bni,bank_transfer_bri,bank_transfer_permata,bank_transfer_mandiri,echannel,credit_card,gopay,shopeepay,dana,qris,cstore_alfamart,cstore_indomaret,akulaku',
         ]);
 
         $cart = session()->get('cart', []);
         if (empty($cart)) {
             return redirect()->route('cart.index')->with('error', 'Keranjang kosong');
+        }
+
+        // ensure user has already selected shipping (saved in session)
+        $shipping = session()->get('shipping');
+        if (empty($shipping) || empty($shipping['service']) || (float)($shipping['cost'] ?? 0) <= 0) {
+            return redirect()->route('cart.index')->with('error', 'Harap pilih ongkir terlebih dahulu sebelum melakukan pembayaran.');
         }
 
         DB::beginTransaction();
@@ -90,17 +106,27 @@ class PaymentController extends Controller
                 $total += $product->harga * $quantity;
             }
 
-            // create order
+            // include shipping stored in session (if any)
+            $shipping = session()->get('shipping', ['cost' => 0, 'service' => null, 'city' => null, 'province' => null]);
+            $shippingCost = (float) ($shipping['cost'] ?? 0);
+
+            // create order with shipping included in total_harga
             $order = Orders::create([
                 'user_id' => Auth::id(),
-                'total_harga' => $total,
+                'total_harga' => $total + $shippingCost,
                 'status' => 'pending',
-                'customer_name' => $validated['customer_name'],
-                'customer_email' => $validated['customer_email'],
-                'customer_phone' => $validated['customer_phone'],
-                'shipping_address' => $validated['shipping_address'],
-                'payment_method' => $validated['payment_method'],
+                'customer_name' => $validated['customer_name'] ?? null,
+                'customer_email' => $validated['customer_email'] ?? null,
+                'customer_phone' => $validated['customer_phone'] ?? null,
+                'shipping_address' => $validated['shipping_address'] ?? null,
+                'payment_method' => $validated['payment_method'] ?? null,
                 'payment_status' => 'pending',
+                // persist shipping details
+                'shipping_city' => $shipping['city'] ?? null,
+                'shipping_province' => $shipping['province'] ?? null,
+                'shipping_service' => $shipping['service'] ?? null,
+                'shipping_cost' => $shippingCost,
+                'biteship' => $shipping['biteship'] ?? null,
             ]);
 
             // create order items (stock already decremented when added to cart)
@@ -138,6 +164,8 @@ class PaymentController extends Controller
                 $snapToken = $chargeResp->snap_token;
                 $order->snap_token = $snapToken;
                 $order->save();
+                // clear shipping session only after successful charge/snap creation
+                try { session()->forget('shipping'); } catch (\Throwable $e) { Log::warning('Failed to clear shipping after snap', ['error' => $e->getMessage(), 'order_id' => $order->id]); }
                 return view('pages.payment-checkout', compact('order', 'snapToken'));
             }
 
@@ -148,6 +176,9 @@ class PaymentController extends Controller
                 $order->snap_token = $chargeResp->va_numbers[0]->va_number ?? $order->snap_token;
             }
             $order->save();
+
+            // clear shipping session only after successful charge creation
+            try { session()->forget('shipping'); } catch (\Throwable $e) { Log::warning('Failed to clear shipping after charge', ['error' => $e->getMessage(), 'order_id' => $order->id]); }
 
             return view('pages.payment-instructions', ['order' => $order, 'midtrans' => $chargeResp, 'method' => $method]);
         } catch (\Exception $e) {
@@ -173,13 +204,18 @@ class PaymentController extends Controller
             $order = null;
         }
 
-        // Only clear cart and show success when payment_status is paid.
+        // If order exists and is paid, clear cart and show success page
         if ($order && $order->payment_status === 'paid') {
             session()->forget('cart');
             return view('pages.payment-success', compact('order'));
         }
 
-        // If not paid yet, redirect to payment instructions / pending page
+        // If order exists but not yet paid, show a pending page with controls
+        if ($order) {
+            return view('pages.payment-pending', compact('order'));
+        }
+
+        // If no order provided, redirect to Your Orders with info
         return redirect()->route('pages.yourorders')->with('info', 'Pembayaran belum terkonfirmasi. Menunggu notifikasi dari Midtrans.');
     }
 
@@ -304,6 +340,46 @@ class PaymentController extends Controller
             return response('OK', 200);
         } catch (\Exception $e) {
             return response('Error', 500);
+        }
+    }
+
+    /**
+     * Accept Snap onSuccess payload from client and refresh order status immediately.
+     * This helps when Midtrans webhook is delayed or cannot reach the dev server.
+     */
+    public function snapCallback(Request $request)
+    {
+        $payload = $request->all();
+
+        // Expect transaction_id and order_id in payload from Snap onSuccess
+        $transactionId = $payload['transaction_id'] ?? null;
+        $orderRef = $payload['order_id'] ?? null;
+
+        if (!$orderRef) {
+            return response()->json(['error' => 'order_id missing'], 400);
+        }
+
+        // order_id in Midtrans is often "{orderId}-{timestamp}", extract numeric prefix
+        $orderId = explode('-', $orderRef)[0];
+        $order = Orders::with('items.product')->find($orderId);
+        if (!$order) {
+            return response()->json(['error' => 'Order not found'], 404);
+        }
+
+        // Persist transaction id if available
+        if ($transactionId) {
+            $order->transaction_id = $transactionId;
+            $order->save();
+        }
+
+        // attempt to refresh status from Midtrans immediately
+        try {
+            $this->midtrans->refreshOrderStatus($order);
+            $order->refresh();
+            return response()->json(['ok' => true, 'payment_status' => $order->payment_status]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('snapCallback refresh failed', ['error' => $e->getMessage(), 'order_id' => $order->id]);
+            return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
 }

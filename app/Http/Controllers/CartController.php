@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Products;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use App\Models\ShippingRateCache;
+use Carbon\Carbon;
 
 
 class CartController extends Controller
@@ -21,6 +25,7 @@ class CartController extends Controller
         if (!empty($cart)) {
             $productIds = array_keys($cart);
             $products = Products::whereIn('id', $productIds)->get()->keyBy('id');
+            $totalWeight = 0; // in grams
 
             foreach ($cart as $productId => $item) {
                 $product = $products->get($productId);
@@ -33,6 +38,9 @@ class CartController extends Controller
                         'subtotal' => ($item['harga'] ?? $item['price']) * $item['quantity'],
                     ];
                     $total += ($item['harga'] ?? $item['price']) * $item['quantity'];
+                    // accumulate weight
+                    $prodWeight = (int) ($product->berat ?? 0);
+                    $totalWeight += $prodWeight * (int)$item['quantity'];
                 }
             }
         }
@@ -56,7 +64,24 @@ class CartController extends Controller
         }
 
 
-        return view('pages.cart', compact('items', 'cart', 'total', 'provinces'));
+        // load saved shipping (if any) from session so frontend can display it
+        $shipping = session()->get('shipping', [
+            'cost' => 0,
+            'service' => null,
+            'courier' => null,
+            'district_id' => null,
+            'etd' => null,
+            'province' => null,
+            'city' => null,
+        ]);
+
+        $addresses = [];
+        if (auth()->check()) {
+            $addresses = auth()->user()->addresses()->orderByDesc('is_default')->get();
+        }
+
+        return view('pages.cart', compact('items', 'cart', 'total', 'provinces', 'shipping', 'addresses'))
+            ->with('totalWeight', $totalWeight ?? 0);
 
     }
 
@@ -287,25 +312,119 @@ class CartController extends Controller
      */
     public function checkOngkir(Request $request)
     {
-        
-        $response = Http::asForm()->withHeaders([
+        try {
+            $apiKey = config('rajaongkir.api_key');
+            if (empty($apiKey)) {
+                Log::warning('RajaOngkir API key not configured.');
+                return response()->json(['error' => 'RajaOngkir API key belum dikonfigurasi.'], 502);
+            }
 
-            //headers yang diperlukan untuk API Raja Ongkir
-            'Accept' => 'application/json',
-            'key'    => config('rajaongkir.api_key'),
+            $district = $request->input('district_id');
+            $courier = $request->input('courier');
+            $weight = (int) $request->input('weight');
 
-        ])->post('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
+            if (empty($district) || empty($courier) || $weight <= 0) {
+                return response()->json(['error' => 'Parameter tidak lengkap (district, courier, weight).'], 400);
+            }
+
+            // bucket weight into 500g steps to reduce cache cardinality
+            $bucketSize = 500; // grams
+            $weightBucket = (int) (ceil($weight / $bucketSize) * $bucketSize);
+
+            $cacheKey = "ongkir:{$district}:{$courier}:{$weightBucket}";
+
+            // try in-memory/framework cache first (fast path)
+            if (Cache::has($cacheKey)) {
+                $cached = Cache::get($cacheKey);
+                return response()->json($cached);
+            }
+
+            // fallback to DB-backed cache table to share caches across instances
+            $dbCache = ShippingRateCache::where('district_id', $district)
+                ->where('courier', $courier)
+                ->where('weight_bucket', $weightBucket)
+                ->where('expires_at', '>', Carbon::now())
+                ->first();
+
+            if ($dbCache) {
+                // populate framework cache for faster subsequent hits
+                Cache::put($cacheKey, $dbCache->data, now()->addHours(6));
+                return response()->json($dbCache->data);
+            }
+
+            $response = Http::asForm()->withHeaders([
+                'Accept' => 'application/json',
+                'key'    => $apiKey,
+            ])->timeout(10)->post('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
                 'origin'      => 1392, // ID kecamatan Diwek (ganti sesuai kebutuhan)
-                'destination' => $request->input('district_id'), // ID kecamatan tujuan
-                'weight'      => $request->input('weight'), // Berat dalam gram
-                'courier'     => $request->input('courier'), // Kode kurir (jne, tiki, pos)
+                'destination' => $district, // ID kecamatan tujuan
+                'weight'      => $weightBucket, // use bucketed weight
+                'courier'     => $courier,
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json()['data'] ?? [];
+                // cache the data for 6 hours in both framework cache and DB
+                $ttlHours = 6;
+                Cache::put($cacheKey, $data, now()->addHours($ttlHours));
+
+                try {
+                    ShippingRateCache::updateOrCreate([
+                        'district_id' => $district,
+                        'courier' => $courier,
+                        'weight_bucket' => $weightBucket,
+                    ], [
+                        'data' => $data,
+                        'expires_at' => Carbon::now()->addHours($ttlHours),
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('Failed writing shipping_rate_caches DB entry: ' . $e->getMessage());
+                }
+
+                return response()->json($data);
+            }
+
+            // log and return error when upstream fails
+            Log::error('RajaOngkir responded with non-200', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+
+            return response()->json(['error' => 'Gagal mendapatkan data ongkir dari RajaOngkir.'], 502);
+
+        } catch (\Exception $e) {
+            Log::error('Exception when calling RajaOngkir: ' . $e->getMessage());
+            return response()->json(['error' => 'Terjadi kesalahan saat menghitung ongkir.'], 500);
+        }
+    }
+
+    /**
+     * Save selected shipping option to session so it persists with the cart
+     */
+    public function saveShipping(Request $request)
+    {
+        $validated = $request->validate([
+            'cost' => 'required|numeric|min:0',
+            'service' => 'required|string',
+            'courier' => 'nullable|string',
+            'district_id' => 'nullable|integer',
+            'etd' => 'nullable|string',
+            'province' => 'nullable|string',
+            'city' => 'nullable|string',
         ]);
 
-        if ($response->successful()) {
+        $shipping = [
+            'cost' => (float) $validated['cost'],
+            'service' => $validated['service'] ?? null,
+            'courier' => $validated['courier'] ?? null,
+            'district_id' => $validated['district_id'] ?? null,
+            'etd' => $validated['etd'] ?? null,
+            'province' => $validated['province'] ?? null,
+            'city' => $validated['city'] ?? null,
+        ];
 
-            // Mengambil data ongkos kirim dari respons JSON
-            // Jika 'data' tidak ada, inisialisasi dengan array kosong
-            return $response->json()['data'] ?? [];
-        }
+        session()->put('shipping', $shipping);
+
+        return response()->json(['status' => 'ok', 'shipping' => $shipping]);
     }
 }

@@ -26,51 +26,7 @@
             <form action="{{ route('payment.store') }}" method="POST">
                 @csrf
 
-                <div class="card mb-4">
-                    <div class="card-header bg-warning">
-                        <h5 class="mb-0">Informasi Pembayaran</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="customer_name" class="form-label">Nama Lengkap</label>
-                            <input type="text" class="form-control @error('customer_name') is-invalid @enderror"
-                                   id="customer_name" name="customer_name"
-                                   value="{{ old('customer_name', auth()->user()->name ?? '') }}" required>
-                            @error('customer_name')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="customer_email" class="form-label">Email</label>
-                            <input type="email" class="form-control @error('customer_email') is-invalid @enderror"
-                                   id="customer_email" name="customer_email"
-                                   value="{{ old('customer_email', auth()->user()->email ?? '') }}" required>
-                            @error('customer_email')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="customer_phone" class="form-label">Nomor Telepon</label>
-                            <input type="tel" class="form-control @error('customer_phone') is-invalid @enderror"
-                                   id="customer_phone" name="customer_phone"
-                                   value="{{ old('customer_phone', auth()->user()->phone ?? '') }}" required>
-                            @error('customer_phone')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="shipping_address" class="form-label">Alamat Pengiriman</label>
-                            <textarea class="form-control @error('shipping_address') is-invalid @enderror"
-                                      id="shipping_address" name="shipping_address" rows="3" required>{{ old('shipping_address', auth()->user()->address ?? '') }}</textarea>
-                            @error('shipping_address')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
+                <!-- Informasi Pembayaran dihapus: data pelanggan diambil dari profil/session saat checkout -->
 
                 <div class="card mb-4">
                     <div class="card-header bg-warning">
@@ -191,9 +147,18 @@
 
                     <hr>
 
+                    <div class="d-flex justify-content-between">
+                        <span>Subtotal:</span>
+                        <span>Rp {{ number_format($total ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Ongkir:</span>
+                        <span>Rp {{ number_format(data_get($shipping, 'cost', 0), 0, ',', '.') }}</span>
+                    </div>
+                    <hr>
                     <div class="d-flex justify-content-between fw-bold">
                         <span>Total:</span>
-                        <span class="text-warning">Rp {{ number_format($total ?? 0, 0, ',', '.') }}</span>
+                        <span class="text-warning">Rp {{ number_format($totalWithShipping ?? ($total ?? 0), 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>            
@@ -201,3 +166,24 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const chk = document.getElementById('use_profile_address');
+    const ta = document.getElementById('shipping_address');
+    const profileAddress = {!! json_encode(auth()->user()->address ?? '') !!};
+
+    if (chk && ta) {
+        chk.addEventListener('change', function () {
+            if (this.checked) {
+                ta.value = profileAddress;
+                ta.setAttribute('readonly', 'readonly');
+            } else {
+                ta.removeAttribute('readonly');
+            }
+        });
+    }
+});
+</script>
+@endpush

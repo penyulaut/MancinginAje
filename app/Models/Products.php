@@ -10,7 +10,7 @@ class Products extends Model
     // public $guarded = [];
 
     protected $table = 'products';
-    protected $fillable = ['nama', 'deskripsi', 'harga', 'stok', 'gambar','category_id', 'seller_id'];
+    protected $fillable = ['nama', 'deskripsi', 'harga', 'stok', 'gambar','category_id', 'seller_id', 'berat'];
 
     public function category()
     {
