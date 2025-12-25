@@ -12,9 +12,9 @@ class BiteshipService
 
     public function __construct()
     {
-        $this->apiKey = config('biteship.api_key');
-        $this->baseUrl = config('biteship.base_url');
-        $this->originPostalCode = config('biteship.origin_postal_code');
+        $this->apiKey = config('biteship.api_key') ?? '';
+        $this->baseUrl = config('biteship.base_url') ?? '';
+        $this->originPostalCode = config('biteship.origin_postal_code') ?? 0;
     }
 
     public function getRates(int $destinationId, string $courier): array

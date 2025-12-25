@@ -22,12 +22,29 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsAdmin::class])->grou
     Route::get('/admin/dashboard', [App\Http\Controllers\DashboardController::class, 'indexAdmin'])->name('admin.dashboard.index');
     Route::post('/admin/dashboard/{id}/restock', [App\Http\Controllers\DashboardController::class, 'restock'])->name('admin.dashboard.restock');
 
-    // Admin may also add products (uses same ProductController but accessible to admin)
+    // Admin Products Management
+    Route::get('/admin/products', [App\Http\Controllers\DashboardController::class, 'indexAdmin'])->name('admin.products.index');
+    Route::get('/admin/products/create', [App\Http\Controllers\ProductController::class, 'create'])->name('admin.products.create');
+    Route::post('/admin/products', [App\Http\Controllers\ProductController::class, 'store'])->name('admin.products.store');
+    Route::get('/admin/products/{id}/edit', [App\Http\Controllers\ProductController::class, 'edit'])->name('admin.products.edit');
+    Route::put('/admin/products/{id}', [App\Http\Controllers\ProductController::class, 'update'])->name('admin.products.update');
+    Route::delete('/admin/products/{id}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('admin.products.destroy');
+
+    // Admin Categories Management
+    Route::get('/admin/categories', [App\Http\Controllers\CategoryController::class, 'index'])->name('admin.categories.index');
+    Route::get('/admin/categories/create', [App\Http\Controllers\CategoryController::class, 'create'])->name('admin.categories.create');
+    Route::post('/admin/categories', [App\Http\Controllers\CategoryController::class, 'store'])->name('admin.categories.store');
+    Route::get('/admin/categories/{id}/edit', [App\Http\Controllers\CategoryController::class, 'edit'])->name('admin.categories.edit');
+    Route::put('/admin/categories/{id}', [App\Http\Controllers\CategoryController::class, 'update'])->name('admin.categories.update');
+    Route::delete('/admin/categories/{id}', [App\Http\Controllers\CategoryController::class, 'destroy'])->name('admin.categories.destroy');
+
+    // Legacy routes (keep for compatibility)
     Route::get('/admin/dashboard/create', [App\Http\Controllers\ProductController::class, 'create'])->name('admin.dashboard.create');
     Route::post('/admin/dashboard', [App\Http\Controllers\ProductController::class, 'store'])->name('admin.dashboard.store');
     Route::get('/admin/dashboard/{id}/edit', [App\Http\Controllers\ProductController::class, 'edit'])->name('admin.dashboard.edit');
     Route::put('/admin/dashboard/{id}', [App\Http\Controllers\ProductController::class, 'update'])->name('admin.dashboard.update');
     Route::delete('/admin/dashboard/{id}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('admin.dashboard.destroy');
+
     // Admin reports
     Route::get('/admin/reports', [App\Http\Controllers\DashboardController::class, 'reports'])->name('admin.reports.index');
     // Admin manage all orders
@@ -38,6 +55,8 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsAdmin::class])->grou
     Route::delete('/admin/sellers/{id}', [App\Http\Controllers\DashboardController::class, 'destroySeller'])->name('admin.sellers.destroy');
     // Admin delete any user (except self)
     Route::delete('/admin/users/{id}', [App\Http\Controllers\DashboardController::class, 'destroyUser'])->name('admin.users.destroy');
+    // Transactions export
+    Route::get('/admin/transactions/export', [App\Http\Controllers\DashboardController::class, 'exportTransactions'])->name('admin.transactions.export');
 });
 
 // Products & Categories

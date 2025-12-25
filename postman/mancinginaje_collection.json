@@ -1,0 +1,1507 @@
+{
+  "info": {
+    "_postman_id": "mancinginaje-api-collection",
+    "name": "MancinginAje API Complete",
+    "description": "Complete API collection for MancinginAje E-Commerce Platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Test User",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "test@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "password123",
+                  "type": "text"
+                },
+                {
+                  "key": "password_confirmation",
+                  "value": "password123",
+                  "type": "text"
+                },
+                {
+                  "key": "role",
+                  "value": "customer",
+                  "type": "text"
+                },
+                {
+                  "key": "phone",
+                  "value": "081234567890",
+                  "type": "text"
+                },
+                {
+                  "key": "address",
+                  "value": "Jl. Mancing No. 1",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/register/submit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "register",
+                "submit"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Extract CSRF token from cookie and save to environment",
+                  "var xsrfCookie = pm.cookies.get('XSRF-TOKEN');",
+                  "if (xsrfCookie) {",
+                  "    pm.environment.set('csrf_token', decodeURIComponent(xsrfCookie));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "test@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "password123",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Authenticated User (Sanctum)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearer_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/user",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "user"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Suggestions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search-suggestions?q=joran",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "search-suggestions"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "joran"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Product Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/beranda/detail/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "detail",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "View Cart",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/beranda/cart",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "cart"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add to Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/beranda/cart/add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "cart",
+                "add"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Cart Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/beranda/cart/update/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "cart",
+                "update",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remove from Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/beranda/cart/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "cart",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Save Shipping Option",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cost\": 25000,\n  \"service\": \"REG\",\n  \"courier\": \"jne\",\n  \"district_id\": 1234\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/beranda/cart/shipping",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "cart",
+                "shipping"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shipping",
+      "item": [
+        {
+          "name": "Get Cities by Province",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cities/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "cities",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Districts by City",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/districts/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "districts",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Check Ongkir",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"district_id\": 1234,\n  \"courier\": \"jne\",\n  \"weight\": 1000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/check-ongkir",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "check-ongkir"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Biteship",
+      "item": [
+        {
+          "name": "Get Shipping Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": {\n    \"latitude\": -6.2088,\n    \"longitude\": 106.8456\n  },\n  \"destination\": {\n    \"latitude\": -6.9175,\n    \"longitude\": 107.6191\n  },\n  \"weight\": 1000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/biteship/quote",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "biteship",
+                "quote"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Shipment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": 1,\n  \"service\": \"jne_reg\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/biteship/create-shipment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "biteship",
+                "create-shipment"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Track Shipment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/biteship/track/ABCD1234567890",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "biteship",
+                "track",
+                "ABCD1234567890"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "item": [
+        {
+          "name": "View Payment Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/beranda/payment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "payment"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "payment_method",
+                  "value": "bank_transfer",
+                  "type": "text"
+                },
+                {
+                  "key": "customer_name",
+                  "value": "John Doe",
+                  "type": "text"
+                },
+                {
+                  "key": "customer_email",
+                  "value": "john@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "customer_phone",
+                  "value": "081234567890",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/beranda/payment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "payment"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Retry Payment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/beranda/payment/retry/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "payment",
+                "retry",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Payment Success Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/beranda/payment/success",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "payment",
+                "success"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Snap Callback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"1-1700000000\",\n  \"transaction_id\": \"tx-abc-123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/beranda/payment/snap-callback",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "payment",
+                "snap-callback"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Midtrans Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_status\": \"capture\",\n  \"order_id\": \"1-1700000000\",\n  \"gross_amount\": \"275000.00\",\n  \"payment_type\": \"credit_card\",\n  \"signature_key\": \"test-signature\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/beranda/payment/notification",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "payment",
+                "notification"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Poll Order Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/beranda/api/order-status/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "api",
+                "order-status",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Clear Cart After Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/beranda/api/order-clear/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "api",
+                "order-clear",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "View Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/beranda/yourorders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "yourorders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/beranda/yourorders/1/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "yourorders",
+                "1",
+                "cancel"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "View Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/beranda/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "profile"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "John Doe Updated",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "john@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "phone",
+                  "value": "081234567890",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/beranda/profile/update",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "profile",
+                "update"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "label",
+                  "value": "Rumah",
+                  "type": "text"
+                },
+                {
+                  "key": "address_line",
+                  "value": "Jl. Mancing No. 1",
+                  "type": "text"
+                },
+                {
+                  "key": "province_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "province_name",
+                  "value": "DKI Jakarta",
+                  "type": "text"
+                },
+                {
+                  "key": "city_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "city_name",
+                  "value": "Jakarta Pusat",
+                  "type": "text"
+                },
+                {
+                  "key": "district_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "district_name",
+                  "value": "Menteng",
+                  "type": "text"
+                },
+                {
+                  "key": "postal_code",
+                  "value": "10310",
+                  "type": "text"
+                },
+                {
+                  "key": "is_default",
+                  "value": "1",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/beranda/profile/address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "profile",
+                "address"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Address",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/beranda/profile/address/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "profile",
+                "address",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Order History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/beranda/profile/history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "profile",
+                "history"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seller Dashboard",
+      "item": [
+        {
+          "name": "View Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/beranda/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "dashboard"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Product Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/beranda/dashboard/create",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "dashboard",
+                "create"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Store Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Joran Pancing Pro",
+                  "type": "text"
+                },
+                {
+                  "key": "price",
+                  "value": "250000",
+                  "type": "text"
+                },
+                {
+                  "key": "stock",
+                  "value": "50",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Joran pancing premium",
+                  "type": "text"
+                },
+                {
+                  "key": "category_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "image_url",
+                  "value": "https://i.imgur.com/example.jpg",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/beranda/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "dashboard"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Edit Product Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/beranda/dashboard/1/edit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "dashboard",
+                "1",
+                "edit"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Joran Pancing Pro Updated",
+                  "type": "text"
+                },
+                {
+                  "key": "price",
+                  "value": "275000",
+                  "type": "text"
+                },
+                {
+                  "key": "stock",
+                  "value": "60",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Joran pancing premium updated",
+                  "type": "text"
+                },
+                {
+                  "key": "category_id",
+                  "value": "1",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/beranda/dashboard/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "dashboard",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/beranda/dashboard/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "beranda",
+                "dashboard",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Dashboard",
+      "item": [
+        {
+          "name": "View Admin Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "dashboard"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Restock Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "add_stock",
+                  "value": "100",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/dashboard/1/restock",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "dashboard",
+                "1",
+                "restock"
+              ]
+            }
+          }
+        },
+        {
+          "name": "View Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/reports",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "reports"
+              ]
+            }
+          }
+        },
+        {
+          "name": "View All Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/orders/1/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "orders",
+                "1",
+                "cancel"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Accept Order (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/orders/1/accept",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "orders",
+                "1",
+                "accept"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Seller",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/sellers/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "sellers",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
