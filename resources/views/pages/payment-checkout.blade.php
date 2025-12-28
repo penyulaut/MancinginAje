@@ -9,8 +9,43 @@
         <p>Total: <strong>Rp {{ number_format($order->total_harga,0,',','.') }}</strong></p>
     </div>
 
-    <div class="text-center">
-        <button id="pay-button" class="btn btn-success">Bayar Sekarang</button>
+    <div class="text-center mb-4">
+        <button id="pay-button" class="btn btn-success btn-lg mb-3">
+            <i class="fas fa-credit-card me-2"></i> Bayar Sekarang
+        </button>
+
+        @php
+            $isSandbox = !config('midtrans.is_production');
+            $sandboxDashboardUrl = 'https://dashboard.sandbox.midtrans.com';
+        @endphp
+
+        @if($isSandbox)
+        <div class="alert alert-info mt-3 text-start">
+            <h6 class="alert-heading"><i class="fas fa-flask me-2"></i> Mode Sandbox (Testing)</h6>
+            <p class="mb-2 small">Untuk testing pembayaran, gunakan simulator Midtrans:</p>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                <a href="https://simulator.sandbox.midtrans.com/bca/va/index" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-university me-1"></i> VA BCA
+                </a>
+                <a href="https://simulator.sandbox.midtrans.com/bni/va/index" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-university me-1"></i> VA BNI
+                </a>
+                <a href="https://simulator.sandbox.midtrans.com/bri/va/index" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-university me-1"></i> VA BRI
+                </a>
+                <a href="https://simulator.sandbox.midtrans.com/qris/index" target="_blank" class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-qrcode me-1"></i> QRIS
+                </a>
+                <a href="https://simulator.sandbox.midtrans.com/gopay/ui/index" target="_blank" class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-wallet me-1"></i> GoPay
+                </a>
+            </div>
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Klik "Bayar Sekarang", pilih metode pembayaran, lalu gunakan simulator untuk menyelesaikan pembayaran.
+            </small>
+        </div>
+        @endif
     </div>
 
     @php

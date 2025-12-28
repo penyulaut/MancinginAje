@@ -97,6 +97,7 @@
                     </div>
                     @php
                         $shippingCostInitial = isset($shipping) ? (float)($shipping['cost'] ?? 0) : 0;
+                        $hasShipping = isset($shipping) && !empty($shipping['service']) && $shippingCostInitial > 0;
                     @endphp
                     <div class="d-flex justify-content-between mb-2">
                         <span>Ongkir</span>
@@ -108,10 +109,28 @@
                         <span id="total-price">Rp {{ number_format($total + $shippingCostInitial,0,',','.') }}</span>
                     </div>
 
-                    <a href="{{ auth()->check() ? route('payment.index') : route('login') }}"
-                       class="btn btn-warning w-100 mt-3">
-                        {{ auth()->check() ? 'Lanjut ke Pembayaran' : 'Login untuk Checkout' }}
+                    @if(!$hasShipping)
+                    <div class="alert alert-warning mt-3 mb-2 py-2" id="shipping-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        <small>Pilih alamat dan cek ongkir terlebih dahulu sebelum melanjutkan pembayaran.</small>
+                    </div>
+                    @endif
+
+                    @if(auth()->check())
+                        @if($hasShipping)
+                        <a href="{{ route('payment.index') }}" class="btn btn-warning w-100 mt-3" id="btn-checkout">
+                            Lanjut ke Pembayaran
+                        </a>
+                        @else
+                        <button class="btn btn-secondary w-100 mt-3" id="btn-checkout" disabled>
+                            Lanjut ke Pembayaran
+                        </button>
+                        @endif
+                    @else
+                    <a href="{{ route('login') }}" class="btn btn-warning w-100 mt-3">
+                        Login untuk Checkout
                     </a>
+                    @endif
                 </div>
             </div>
         </div>
@@ -172,6 +191,16 @@
 $(function () {
 
     const rupiah = n => new Intl.NumberFormat('id-ID').format(n);
+
+    // Helper function to enable checkout button after shipping is selected
+    function enableCheckout() {
+        const btnCheckout = $('#btn-checkout');
+        if (btnCheckout.is('button')) {
+            // Replace disabled button with active link
+            btnCheckout.replaceWith('<a href="{{ route("payment.index") }}" class="btn btn-warning w-100 mt-3" id="btn-checkout">Lanjut ke Pembayaran</a>');
+        }
+        $('#shipping-warning').fadeOut();
+    }
 
     // Province/city/district selection removed — using saved profile addresses only.
 
@@ -245,6 +274,8 @@ $(function () {
                             const sc = parseFloat(res2.shipping.cost || 0);
                             $('#shipping-cost').text('Rp ' + rupiah(sc));
                             $('#total-price').text('Rp ' + rupiah(sc + {{ $total }}));
+                            // Enable checkout button and hide warning
+                            enableCheckout();
                         }
                     }).fail(() => alert('Gagal menyimpan pilihan ongkir.')).always(() => btn.prop('disabled', false).text('Pilih'));
                 });
@@ -326,6 +357,8 @@ $(function () {
                             const sc = parseFloat(res2.shipping.cost || 0);
                             $('#shipping-cost').text('Rp ' + rupiah(sc));
                             $('#total-price').text('Rp ' + rupiah(sc + {{ $total }}));
+                            // Enable checkout button and hide warning
+                            enableCheckout();
                         }
                     }).fail(() => alert('Gagal menyimpan pilihan ongkir.')).always(() => btn.prop('disabled', false).text('Pilih'));
                 });

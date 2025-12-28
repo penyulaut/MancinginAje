@@ -18,10 +18,11 @@ RUN npm run build
 # PHP Application stage
 FROM php:8.2-fpm-alpine AS app
 
-# Install system dependencies
+# Install system dependencies including PostgreSQL
 RUN apk add --no-cache \
     git \
     curl \
+    curl-dev \
     libpng-dev \
     libwebp-dev \
     libjpeg-turbo-dev \
@@ -38,27 +39,33 @@ RUN apk add --no-cache \
     libzip-dev \
     netcat-openbsd \
     linux-headers \
-    postgresql-dev
+    postgresql-dev \
+    postgresql-libs \
+    ca-certificates \
+    openssl
 
-# Install PHP extensions including PostgreSQL
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install -j$(nproc) \
-        pdo \
-        pdo_mysql \
-        pdo_sqlite \
-        pdo_pgsql \
-        pgsql \
-        mbstring \
-        exif \
-        pcntl \
-        bcmath \
-        gd \
-        intl \
-        zip \
-        opcache
+# Configure and install PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp
 
-# Verify PostgreSQL extension is loaded
-RUN php -m | grep -i pgsql
+# Install each extension separately for better error handling
+RUN docker-php-ext-install pdo
+RUN docker-php-ext-install pdo_mysql
+RUN docker-php-ext-install pdo_sqlite
+RUN docker-php-ext-install pdo_pgsql
+RUN docker-php-ext-install pgsql
+RUN docker-php-ext-install mbstring
+RUN docker-php-ext-install exif
+RUN docker-php-ext-install pcntl
+RUN docker-php-ext-install bcmath
+RUN docker-php-ext-install gd
+RUN docker-php-ext-install intl
+RUN docker-php-ext-install zip
+RUN docker-php-ext-install opcache
+RUN docker-php-ext-install curl
+
+# Verify critical extensions are loaded
+RUN php -m | grep -i pdo_pgsql || (echo "pdo_pgsql not installed!" && exit 1)
+RUN php -m | grep -i curl || (echo "curl not installed!" && exit 1)
 
 # Install Redis extension
 RUN apk add --no-cache autoconf g++ make \
