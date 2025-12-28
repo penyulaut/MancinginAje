@@ -52,17 +52,8 @@
                                 <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" placeholder="Konfirmasi password" required>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="role" class="form-label">Daftar Sebagai</label>
-                                <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required>
-                                    <option value="">Pilih tipe akun</option>
-                                    <option value="customer" {{ old('role') == 'customer' ? 'selected' : '' }}>Pembeli</option>
-                                    <option value="seller" {{ old('role') == 'seller' ? 'selected' : '' }}>Penjual</option>
-                                </select>
-                                @error('role')
-                                    <span class="invalid-feedback">{{ $message }}</span>
-                                @enderror
-                            </div>
+                            <!-- Role is automatically set to customer -->
+                            <input type="hidden" name="role" value="customer">
 
                             <div class="mb-3">
                                 <label for="phone" class="form-label">Nomor Telepon (Opsional)</label>

@@ -6,8 +6,8 @@ Thumbs.db
 /.fleet
 
 # Environment
-.env
-.env.*
+#.env
+#.env.*
 
 # Logs
 *.log
