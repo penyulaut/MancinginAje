@@ -130,9 +130,9 @@
 
 <!-- Admin Sidebar -->
 <div class="admin-sidebar">
-  <div class="sidebar-brand">
+  <a href="/" class="sidebar-brand text-decoration-none">
     <i class="fas fa-fish me-2"></i>MancinginAje
-  </div>
+  </a>
   
   <ul class="sidebar-menu">
     <li>

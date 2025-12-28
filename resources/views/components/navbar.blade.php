@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-light fixed-top modern-navbar shadow-sm" style="z-index:1050;">
   <div class="container-fluid px-4">
     <!-- Brand -->
-    <a class="navbar-brand fw-bold fs-3" href="{{ route('pages.beranda') }}">
+    <a class="navbar-brand fw-bold fs-3" href="/">
       <i class="fas fa-fish text-primary"></i>
       Mancingin<span class="text-primary">Aje</span>
     </a>
