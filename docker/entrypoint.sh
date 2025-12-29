@@ -33,6 +33,11 @@ php artisan view:cache
 echo "Running migrations..."
 php artisan migrate --force
 
+# Create storage symlink for public file uploads
+echo "Creating storage symlink..."
+mkdir -p storage/app/public
+php artisan storage:link --force 2>/dev/null || true
+
 echo "=========================================="
 echo "Application is ready!"
 echo "Access: http://localhost:2310"

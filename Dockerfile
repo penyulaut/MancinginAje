@@ -102,6 +102,7 @@ COPY docker/php.ini /usr/local/etc/php/conf.d/custom.ini
 # Create necessary directories
 RUN mkdir -p storage/framework/{sessions,views,cache} \
     && mkdir -p storage/logs \
+    && mkdir -p storage/app/public \
     && mkdir -p bootstrap/cache \
     && mkdir -p database \
     && mkdir -p /var/log/php
