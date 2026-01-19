@@ -13,7 +13,12 @@ php -m | grep -i pgsql
 # Clear any stale cache
 echo "Clearing cached configuration..."
 # Ensure storage and cache dirs exist and have correct permissions
-mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache
+# Note: sh does not support brace expansion, so create directories individually
+mkdir -p storage/framework/sessions
+mkdir -p storage/framework/views
+mkdir -p storage/framework/cache
+mkdir -p storage/logs
+mkdir -p bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache resources/views || true
 chmod -R 775 storage bootstrap/cache || true
 php artisan config:clear
