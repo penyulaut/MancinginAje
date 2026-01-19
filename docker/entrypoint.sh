@@ -29,14 +29,37 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Run migrations
-echo "Running migrations..."
+# Wait for database to be ready (if using networked DB)
+DB_HOST=${DB_HOST:-db}
+DB_PORT=${DB_PORT:-5432}
+echo "Waiting for database at $DB_HOST:$DB_PORT..."
+until nc -z "$DB_HOST" "$DB_PORT"; do
+    echo "Database not ready, sleeping 1s..."
+    sleep 1
+done
+
+# Run migrations and seeders
+echo "Running migrations and seeders..."
 php artisan migrate --force
+php artisan db:seed --force
 
 # Create storage symlink for public file uploads
 echo "Creating storage symlink..."
-mkdir -p storage/app/public
+mkdir -p storage/app/public/images
+chmod -R 775 storage/app/public
+chown -R www-data:www-data storage/app/public
 php artisan storage:link --force 2>/dev/null || true
+
+# Verify symlink
+if [ -L /var/www/html/public/storage ]; then
+    echo "Storage symlink created successfully"
+    ls -la /var/www/html/public/storage
+else
+    echo "WARNING: Storage symlink may not have been created properly"
+    # Fallback: create symlink manually
+    ln -sf /var/www/html/storage/app/public /var/www/html/public/storage
+    echo "Manual symlink created"
+fi
 
 echo "=========================================="
 echo "Application is ready!"

@@ -1,4 +1,5 @@
-# Build stage for frontend assets
+ARG BUILD_FRONTEND=true
+# Build stage for frontend assets (optional via build-arg)
 FROM node:20-alpine AS frontend
 
 WORKDIR /app
@@ -6,23 +7,27 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies (only when requested). Always ensure build output folder exists.
+RUN if [ "${BUILD_FRONTEND}" = "true" ]; then npm ci; else echo "Skipping npm ci"; fi
 
 # Copy source files for build
 COPY . .
 
-# Build frontend assets
-RUN npm run build
+# Build frontend assets (conditional) and ensure build dir exists for later COPY
+RUN if [ "${BUILD_FRONTEND}" = "true" ]; then npm run build; else mkdir -p public/build; fi
 
 # PHP Application stage
 FROM php:8.2-fpm-alpine AS app
 
 # Install system dependencies including PostgreSQL
-RUN apk add --no-cache \
+# Update apk index first to reduce transient failures
+RUN apk update && apk add --no-cache \
+    build-base \
+    autoconf \
+    pkgconfig \
+    re2c \
     git \
     curl \
-    curl-dev \
     libpng-dev \
     libwebp-dev \
     libjpeg-turbo-dev \
@@ -102,14 +107,15 @@ COPY docker/php.ini /usr/local/etc/php/conf.d/custom.ini
 # Create necessary directories
 RUN mkdir -p storage/framework/{sessions,views,cache} \
     && mkdir -p storage/logs \
-    && mkdir -p storage/app/public \
+    && mkdir -p storage/app/public/images \
     && mkdir -p bootstrap/cache \
     && mkdir -p database \
     && mkdir -p /var/log/php
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 storage bootstrap/cache database
+    && chmod -R 775 storage bootstrap/cache database \
+    && chmod -R 777 storage/app/public
 
 # Expose port
 EXPOSE 2310

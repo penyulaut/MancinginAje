@@ -16,7 +16,7 @@ services:
       - APP_ENV=${APP_ENV:-production}
       - APP_KEY=${APP_KEY}
       - APP_DEBUG=${APP_DEBUG:-false}
-      - APP_URL=http://localhost:2310
+      - APP_URL=${APP_URL:-http://localhost:2310}
       - APP_TIMEZONE=Asia/Jakarta
       - APP_LOCALE=${APP_LOCALE:-en}
       - APP_FALLBACK_LOCALE=${APP_FALLBACK_LOCALE:-en}
@@ -29,6 +29,11 @@ services:
       # ====================================
       - DB_CONNECTION=pgsql
       - DB_URL=${DB_URL}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_DATABASE=${DB_DATABASE:-postgres}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
 
       # ====================================
       # Cache, Session & Queue
@@ -103,10 +108,34 @@ services:
     networks:
       - mancinginaje_network
 
+  db:
+    image: postgres:15-alpine
+    container_name: mancinginaje_postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - POSTGRES_DB=${DB_DATABASE:-postgres}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - mancinginaje_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      - "com.docker.compose.healthcheck.interval=10s"
+
 networks:
   mancinginaje_network:
     driver: bridge
 
 volumes:
   app_storage:
+    driver: local
+  db_data:
     driver: local
