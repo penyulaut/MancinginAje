@@ -28,6 +28,8 @@ RUN apk update && apk add --no-cache \
     re2c \
     git \
     curl \
+    curl-dev \
+    libcurl \
     libpng-dev \
     libwebp-dev \
     libjpeg-turbo-dev \

@@ -12,9 +12,19 @@ php -m | grep -i pgsql
 
 # Clear any stale cache
 echo "Clearing cached configuration..."
+# Ensure storage and cache dirs exist and have correct permissions
+mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache resources/views || true
+chmod -R 775 storage bootstrap/cache || true
 php artisan config:clear
 php artisan route:clear
-php artisan view:clear
+# Ensure view path exists (avoid error when path missing)
+if [ ! -d "resources/views" ]; then
+    echo "resources/views not found, creating..."
+    mkdir -p resources/views
+    chown -R www-data:www-data resources/views || true
+fi
+php artisan view:clear || echo "Skipping view:clear (no views)"
 php artisan cache:clear 2>/dev/null || true
 
 # Generate app key if not set
@@ -25,9 +35,10 @@ fi
 
 # Cache configuration for production
 echo "Caching configuration..."
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+php artisan config:cache || echo "config:cache failed, continuing"
+php artisan route:cache || echo "route:cache failed, continuing"
+# view:cache may fail when no views present; do not stop startup
+php artisan view:cache || echo "view:cache failed or no views, continuing"
 
 # Wait for database to be ready (if using networked DB)
 DB_HOST=${DB_HOST:-db}
@@ -40,8 +51,9 @@ done
 
 # Run migrations and seeders
 echo "Running migrations and seeders..."
-php artisan migrate --force
-php artisan db:seed --force
+php artisan migrate --force || echo "migrate failed, continuing"
+# Run seeders but do not fail startup if seeding hits duplicates
+php artisan db:seed --force || echo "db:seed failed or partially applied, continuing"
 
 # Create storage symlink for public file uploads
 echo "Creating storage symlink..."
